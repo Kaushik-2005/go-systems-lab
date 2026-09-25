@@ -148,3 +148,23 @@ go run ./cmd/fixedwindow -limit 3 -window 5s -requests 3 -batches 2 -wait 5.1s
 ```
 
 Both batches are allowed, so six requests can be accepted within only a little more than five seconds. This boundary behavior motivates the sliding-window log.
+
+## Example output explained
+
+For the default fixed-window command:
+
+```text
+time=14:00:00.000 batch=1 request=1 key=client-1 allowed=true
+time=14:00:00.001 batch=1 request=2 key=client-1 allowed=true
+time=14:00:00.001 batch=1 request=3 key=client-1 allowed=true
+time=14:00:00.001 batch=1 request=4 key=client-1 allowed=false
+```
+
+- `time` is when the demo called `Limiter.Allow`.
+- `batch` identifies a group of requests separated by the configured `-wait` duration.
+- `request` is the request number in the demo, not a network request ID.
+- `key=client-1` is the per-key state being limited.
+- `allowed=true` means the algorithm accepted the request and updated its state.
+- `allowed=false` means the limit was reached for the relevant window or bucket state.
+
+The same command shape runs all four algorithms. Only the internal state calculation changes: fixed window uses one counter, sliding log uses timestamps, sliding counter uses adjacent-window counts, and token bucket uses refillable tokens.

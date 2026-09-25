@@ -122,6 +122,23 @@ Then send concurrent requests with PowerShell 7:
 } -ThrottleLimit 20
 ```
 
+### Example output explained
+
+```text
+server-1 handled GET /test
+server-2 handled GET /test
+server-3 handled GET /test
+server-1 handled GET /test
+```
+
+- `server-1`, `server-2`, and `server-3` are the backend identities from `SERVER_ID`.
+- `handled` confirms the request reached a backend rather than ending at the load balancer.
+- `GET` is the HTTP method forwarded by `httputil.ReverseProxy`.
+- `/test` is the original request path preserved during forwarding.
+- The repeating order comes from `algorithms.RoundRobin.Next` selecting the next healthy backend.
+
+If one backend is stopped, later output contains only the remaining server IDs after the health checker marks the stopped backend unhealthy. With `-algorithm random`, the order varies. With `-algorithm leastconnections`, concurrent requests are routed using each backend's active-request count.
+
 ## Implemented
 
 - single-backend reverse proxy
