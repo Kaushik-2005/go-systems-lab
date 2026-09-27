@@ -101,6 +101,19 @@ An in-memory key-value store backed by an append-only log.
 
 Design: [07-key-value-store/design.md](07-key-value-store/design.md)
 
+### 8. [Write-Ahead Log](08-write-ahead-log/README.md)
+
+An append-only durability log that records ordered mutations before state is applied.
+
+- monotonically increasing sequence numbers;
+- JSON record encoding;
+- replay during startup;
+- SHA-256 checksums;
+- corruption detection;
+- incomplete-tail recovery.
+
+Design: [08-write-ahead-log/design.md](08-write-ahead-log/design.md)
+
 ## Building approach
 
 Each component is developed through observable steps:
