@@ -1,38 +1,33 @@
 # Write-Ahead Log Design
 
-## What it solves
+## The problem
 
-A state change can be lost if a process crashes before the change is saved. A write-ahead log records the change first:
+A process can crash after a mutation is created but before in-memory state is safely recoverable. The WAL records the mutation first:
 
 ```text
 mutation -> append and sync WAL -> apply to memory
+restart  -> replay WAL          -> rebuild state
 ```
 
-On restart, replay reconstructs the state in the same order.
+## Records and recovery
 
-## Record model
+Each JSON record contains a sequence number, payload, and checksum. The sequence number preserves order. The checksum is calculated from the sequence and payload, so recovery can reject a complete record that was corrupted.
 
-Each JSON record contains:
+`Open` reads complete newline-delimited records, validates them, and starts the next sequence after the highest valid record. If the final line is incomplete, the valid prefix is kept, the partial tail is truncated, and the file is reopened for appending.
 
 ```text
-sequence + payload + checksum
+valid record       -> replay
+complete bad record -> checksum error
+incomplete tail    -> truncate and continue
 ```
 
-The sequence number gives a total order. The checksum is calculated from the sequence and payload, so recovery can reject a complete record whose contents changed.
+## Concurrency and repository design
 
-## Recovery
-
-`Open` reads complete newline-delimited records, validates their checksums, and sets the next sequence number after the highest valid record.
-
-An incomplete final line is treated as a partial write. The valid prefix is kept, the incomplete tail is truncated, and the file is reopened for appending. A complete record with an invalid checksum returns an error instead of being replayed.
-
-## Concurrency and durability
-
-`Log.mu` serializes appends, sequence allocation, sync, and close. `Append` writes the record and calls `file.Sync` before returning, making the durability step explicit.
-
-## Repository design
+One mutex protects appends, sequence allocation, sync, and close. `Append` writes the record and calls `file.Sync` before returning.
 
 ```text
-wal/wal.go        log state and record operations
-cmd/demo/main.go  append and recovery demonstration
+wal/wal.go        log state, record format, replay, and validation
+cmd/demo/main.go  append, corruption, and tail-recovery experiments
 ```
+
+The WAL is a local file mechanism. It does not apply mutations to an application state machine by itself, replicate records, or implement consensus.

@@ -1,91 +1,37 @@
 # Consistent Hashing Design
 
-## What it solves
+## The problem
 
-The router must choose a node for each key and keep that choice stable while the node set changes.
+The router needs to choose a node for every key. When nodes are added or removed, moving every key is expensive, especially for a cache.
 
-```text
-key -> hash -> ring position -> owner node
-```
-
-This is useful for routing cache entries, partitions, or requests to storage nodes.
-
-## Modulo comparison
-
-The simple baseline is:
+Modulo routing changes the divisor when the node count changes:
 
 ```text
 hash(key) % node_count
 ```
 
-When `node_count` changes, the divisor changes for every key. Adding one node can therefore remap most keys.
+That can remap most keys. The ring keeps nodes and keys on the same circular hash space instead.
 
-The repository keeps this algorithm in `ring/modulo.go` so the redistribution difference can be measured against the ring.
+## The ring and lookup
 
-## Ring representation
-
-The ring hashes nodes and keys into the same 32-bit space. It stores sorted points and the physical owner of each point:
+The ring stores sorted hash points and their physical owners. Lookup hashes the key, binary-searches the points, and chooses the first point clockwise. If the key is after the final point, lookup wraps to the first point.
 
 ```text
-points: [p1, p2, p3, p4, ...]
-owners: point -> node name
+key -> hash -> sorted points -> first clockwise owner
 ```
 
-The space is circular. The point after the largest position is the smallest position.
+Adding a node changes only the ranges immediately before its points. Removing a node moves those ranges to the next clockwise points.
 
-## Lookup
+Virtual nodes create several points for each physical node. More points usually make ownership more even, while adding more ring metadata.
 
-For `Lookup(key)`:
+## State and repository design
 
-1. hash the key;
-2. binary-search the sorted point slice;
-3. choose the first point greater than or equal to the key hash;
-4. wrap to index zero when the key is after the final point;
-5. return that point's physical owner.
+The ring owns placement metadata, not the values stored by nodes. The demonstrations build the ring before lookup, so mutable ring operations are used by one owner at a time. Concurrent updates would need a mutex or immutable snapshots.
 
 ```text
-node-a       key       node-b              node-c
-  |-----------|----------|-------------------|
-              |
-              +--> first node clockwise: node-b
-```
-
-With n ring points, lookup is O(log n).
-
-## Adding and removing nodes
-
-Adding a node inserts its points into the sorted ring. Only the ranges immediately before those points change owners.
-
-Removing a node deletes all of its points. Keys that used those points move to the next clockwise points. Other ranges keep their owners.
-
-The demo maps 100 keys before and after each change and counts how many owners changed.
-
-## Virtual nodes
-
-One point per physical node can create large, uneven ranges. A replica count creates several points per physical node:
-
-```text
-hash("node-a#0") -> point
-hash("node-a#1") -> point
-hash("node-a#2") -> point
-```
-
-The lookup returns `node-a`, not the virtual-node label. More virtual nodes usually improve distribution, while increasing ring metadata.
-
-## Repository design
-
-```text
-ring/modulo.go      modulo routing baseline
-ring/ring.go        sorted points, owners, lookup, add, remove
+ring/modulo.go       modulo comparison
+ring/ring.go         points, owners, lookup, add, remove
 cmd/demo/main.go     redistribution experiment
 ```
 
-The ring owns placement metadata. It does not store values, replicate data, check node health, migrate data, or provide consistency between nodes.
-
-## Concurrency
-
-The demonstrations build the ring before performing lookups, so the ring is used by one owner at a time. If node changes and lookups happen concurrently, the ring needs a mutex or an immutable snapshot strategy around its sorted points and owners.
-
-## Guarantees
-
-For a fixed ring, the same key maps deterministically to the same node. Adding or removing a node changes only the affected clockwise ranges. Virtual nodes improve distribution but do not guarantee perfect balance.
+For a fixed ring, lookup is deterministic and runs in O(log n), where n is the number of ring points. Replication, data migration, health checking, and consistency are separate mechanisms.

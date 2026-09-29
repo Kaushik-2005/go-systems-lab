@@ -1,117 +1,45 @@
 # Load Balancer Design
 
-## What it solves
+## The problem
 
-Clients should not need to know which backend server is available. The load balancer gives them one HTTP address and chooses a healthy backend for each request.
-
-```text
-client -> load balancer :8080 -> healthy backend
-```
-
-The request is forwarded with `httputil.ReverseProxy`, so the load balancer does not implement the backend application itself.
-
-## Request flow
-
-For every request:
-
-1. collect the healthy backends;
-2. return `503 Service Unavailable` if none are healthy;
-3. ask the selector to choose a backend;
-4. increment its active-request count;
-5. apply the request timeout;
-6. forward the request through the reverse proxy;
-7. decrement the active-request count;
-8. mark the backend unhealthy when forwarding fails.
-
-The selector and proxy are separate. A selector decides where a request goes; the proxy handles HTTP forwarding.
-
-## Backend state
-
-Each `servers.Server` contains:
+Clients need one stable HTTP address, while the application may run on several backend servers. The load balancer chooses a healthy backend and forwards each request to it.
 
 ```text
-backend URL
-reverse proxy
-healthy flag
-active request count
+client -> load balancer :8080 -> backend :9000
+                              -> backend :9001
+                              -> backend :9002
 ```
 
-The healthy flag uses `sync.RWMutex`. The active-request count uses `atomic.Int64` because many HTTP handlers can update it at the same time.
+The load balancer does not process application logic. `httputil.ReverseProxy` forwards the request and response.
 
-## Selection algorithms
+## How a request works
 
-All algorithms implement:
+For every request, the component filters unhealthy backends, chooses one, increments its active-request count, applies a timeout, and forwards the request. When forwarding ends, the count is decremented. A proxy error marks that backend unhealthy and returns `502`; if no backend is healthy, the response is `503`.
+
+The selectors implement the same behavior:
 
 ```go
 Next([]*servers.Server) *Server
 ```
 
-Only healthy servers are passed to the selector.
+Round robin rotates through the list, random chooses a healthy backend randomly, and least connections chooses the backend with the smallest active-request count.
 
-### Round robin
+The health checker calls `GET /health` immediately and every two seconds. Each backend is checked in its own goroutine. A successful response marks it healthy; a failed check excludes it from routing.
 
-An index moves through the list:
+## State, concurrency, and failures
 
-```text
-server-1 -> server-2 -> server-3 -> server-1
-```
+Each backend stores its URL, reverse proxy, health flag, and active-request count. The health flag uses `sync.RWMutex`; the request count uses `atomic.Int64`.
 
-It is predictable and simple, but it does not consider request duration.
+The HTTP server already creates concurrent request handlers. The component adds concurrency for health checks and uses a context to stop them during shutdown.
 
-### Random
-
-A random healthy backend is selected. The distribution may be uneven for a small number of requests.
-
-### Least connections
-
-The backend with the fewest active requests is selected. This helps when requests have different durations. Selection and increment are separate operations, so simultaneous requests can still make the choice approximate.
-
-## Health checks
-
-The health checker calls `GET /health` immediately and then every two seconds:
-
-```text
-start
-  |
-  +--> check backend 1 --+
-  +--> check backend 2 ---+--> update health flags
-  `--> check backend 3 --+
-```
-
-Each backend is checked in its own goroutine. A `sync.WaitGroup` waits for the checks to finish. The health-check HTTP client has a timeout, and the context stops the loop during shutdown.
-
-An HTTP 200 response marks a backend healthy. A failed request marks it unhealthy. Healthy backends can rejoin after a later successful check.
-
-## Failure behavior
-
-| Situation | Result |
-|---|---|
-| Health check fails | The backend is excluded from selection. |
-| Backend fails after selection | The proxy returns `502 Bad Gateway` and marks it unhealthy. |
-| Backend does not respond before timeout | The request stops at the configured timeout and the backend is marked unhealthy. |
-| All backends are unhealthy | The load balancer returns `503 Service Unavailable`. |
-| Load balancer shuts down | The health-check context is cancelled and the HTTP server waits for active requests. |
-
-## Concurrency and lifecycle
-
-The Go HTTP server handles request concurrency. The component adds goroutines for health checks.
-
-```text
-health flag       sync.RWMutex
-selector state    selector mutex
-active requests   atomic.Int64
-health lifecycle  context.Context
-request lifetime  timeout context
-```
-
-The load balancer is one process with local backend state. It does not provide service discovery, cross-process health state, request retries, or automatic failover to another backend after a proxy error.
+Backend failure after selection can still happen because a health check is only a point-in-time observation. The request timeout prevents a hanging backend from blocking forever. The load balancer itself is one process, so its state is local and it is also a possible single point of failure.
 
 ## Repository design
 
 ```text
-algorithms/        interchangeable selection strategies
-loadbalancer/      request routing and health checks
-servers/           backend representation and proxy state
-cmd/server/        local HTTP backend
+algorithms/        selection strategies
+loadbalancer/      routing, proxying, and health checks
+servers/           backend state and reverse proxy
+cmd/server/        local backend process
 cmd/loadbalancer/  load balancer process
 ```

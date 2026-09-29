@@ -1,65 +1,44 @@
 # Pub/Sub Broker
 
-## Start with the idea
+## What it is
 
-Think of a news channel. A publisher posts one update, and everyone subscribed to that channel gets their own copy:
-
-```text
-                 +--> subscriber A
-publisher --> news topic
-                 +--> subscriber B
-```
-
-That is publish/subscribe, usually shortened to pub/sub.
-
-The key difference from a message queue is the delivery rule:
+Lets say one publisher sends an event and multiple independent subscribers need to receive it. A pub/sub broker sends a copy of the event to every subscriber of a topic.
 
 ```text
-message queue:  one message -> one competing consumer
-pub/sub:       one event   -> every subscriber of the topic
+publisher -> topic -> subscriber A
+                  -> subscriber B
 ```
 
-A queue distributes work. Pub/sub broadcasts an event to independent consumers, such as an audit service, notification service, and search indexer.
+## How it works
 
-## Event lifecycle
+Subscribers join named topics. When an event is published, the broker sends it to each subscriber's own channel.
 
 ```text
 Publish(event)
        |
        v
- topic: news
-    /       \\
-   v         v
+    news topic
+     /      \\
+    v        v
 subscriber A  subscriber B
 ```
 
-Each subscriber has its own channel. Reading the event from A does not remove it from B's channel.
+The broker also handles:
 
-## What is implemented?
-
-- Named topics
-- Multiple subscribers per topic
-- Fan-out delivery
-- Subscribe and unsubscribe
-- Subscriber channel cleanup
-- Concurrent publication
-- Explicit event IDs and bodies
-- Two slow-subscriber policies:
-  - `Publish`: wait when a subscriber buffer is full
-  - `PublishNonBlocking`: drop for a full subscriber and continue
+- multiple subscribers per topic;
+- fan-out delivery;
+- subscribe and unsubscribe;
+- concurrent publication;
+- blocking slow-subscriber handling;
+- non-blocking message dropping for full buffers.
 
 ## Project structure
 
 ```text
-broker/
-  broker.go            events, topics, subscriptions, and delivery
-cmd/
-  demo/
-    main.go            fan-out, unsubscribe, and slow-subscriber demo
-  concurrent/
-    main.go            concurrent publisher demo
+broker/             topics, subscriptions, and delivery
+cmd/demo/           fan-out and unsubscribe demonstration
+cmd/concurrent/     concurrent publisher demonstration
 go.mod
-design.md              state ownership and delivery reasoning
 ```
 
 ## Run it
@@ -71,62 +50,4 @@ go run ./cmd/demo
 go run ./cmd/concurrent
 ```
 
-## Follow the main demo
-
-The demo prints the subscriber histories after every publication:
-
-```text
-published event-1 ("one") to 2 subscribers
-  A has: [event-1(one)]
-  B has: [event-1(one)]
-
-published event-2 ("two") to 2 subscribers
-  A has: [event-1(one), event-2(two)]
-  B has: [event-1(one), event-2(two)]
-
-published event-3 ("three") to 2 subscribers
-  A has: [event-1(one), event-2(two), event-3(three)]
-  B has: [event-1(one), event-2(two), event-3(three)]
-
-unsubscribe A: success=true
-published event-4 ("four") to 1 subscribers
-  A has: [event-1(one), event-2(two), event-3(three)]
-  B has: [event-1(one), event-2(two), event-3(three), event-4(four)]
-```
-
-Here is how to read it:
-
-1. Events 1, 2, and 3 appear in both histories. That is fan-out.
-2. Unsubscribing A removes it from the topic and closes its channel.
-3. Event 4 goes only to B. A keeps its old history but receives nothing new.
-
-The IDs make it easy to follow one publication through both subscribers.
-
-## Slow subscribers
-
-The demo also shows the non-blocking policy:
-
-```text
-non-blocking policy: alert-1 delivered=1 dropped=0
-non-blocking policy: alert-2 delivered=0 dropped=1
-slow subscriber received: [{alert-1 first}]
-```
-
-The subscriber has a buffer of one. It accepts `alert-1`, but nobody reads it before `alert-2` arrives. Because the demo uses `PublishNonBlocking`, the second event is dropped instead of blocking the publisher.
-
-This is a real design trade-off: blocking protects delivery but can slow publishers; dropping protects throughput but loses events for slow subscribers.
-
-## Concurrent publication
-
-```text
-publishers=3 events_each=5 expected=15
-subscriber A received=15
-subscriber B received=15
-fan-out complete=true
-```
-
-Three publisher goroutines create fifteen events. Both subscribers receive all fifteen. The exact order of events from different publishers can vary because those goroutines run concurrently.
-
-## Scope
-
-This is an in-memory, single-process learning implementation. It has no network protocol, persistence, replay for late subscribers, acknowledgements, or durable delivery. It does not claim exactly-once processing.
+The demos show that the first subscribers all receive the same events, unsubscribed subscribers receive nothing new, and concurrent publishers still fan out events to every subscriber.

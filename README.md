@@ -114,6 +114,18 @@ An append-only durability log that records ordered mutations before state is app
 
 Design: [08-write-ahead-log/design.md](08-write-ahead-log/design.md)
 
+### 9. [Circuit Breaker](09-circuit-breaker/README.md)
+
+A fault-tolerance wrapper that stops calling a repeatedly failing dependency.
+
+- closed, open, and half-open states;
+- failure threshold;
+- reset timeout;
+- recovery probes;
+- concurrency-safe state transitions.
+
+Design: [09-circuit-breaker/design.md](09-circuit-breaker/design.md)
+
 ## Building approach
 
 Each component is developed through observable steps:

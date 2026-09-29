@@ -2,22 +2,44 @@
 
 ## What it is
 
-An in-process store that maps string keys to string values and persists mutations in an append-only JSON log.
+Lets say your application needs to store and retrieve data using a name. A key-value store maps a key to a value.
 
-## What it solves
+```text
+key:   language
+value: Go
+```
 
-It provides simple `Put`, `Get`, and `Delete` operations while keeping data recoverable after the process restarts.
+## How it works
+
+The store keeps an in-memory map and writes every mutation to an append-only log.
+
+```text
+Put/Delete -> append record -> update memory
+restart    -> replay log    -> rebuild map
+```
+
+It also handles:
+
+- `Put`, `Get`, and `Delete`;
+- JSON mutation records;
+- tombstones for deletes;
+- startup recovery;
+- log compaction;
+- concurrent access.
 
 ## Project structure
 
 ```text
-store/store.go        map, append-only records, replay, compaction
-cmd/basic/             in-memory CRUD demonstration
-cmd/concurrent/        concurrent access demonstration
-cmd/persistent/        persistence, recovery, and compaction demonstration
+store/             map, log records, replay, and compaction
+cmd/basic/          CRUD demonstration
+cmd/concurrent/     concurrent access demonstration
+cmd/persistent/     persistence and recovery demonstration
+go.mod
 ```
 
 ## Run it
+
+Run from the `07-key-value-store` directory:
 
 ```powershell
 go run .\cmd\basic\main.go
@@ -25,4 +47,4 @@ go run .\cmd\concurrent\main.go
 go run .\cmd\persistent\main.go
 ```
 
-The persistent store writes `PUT` and `DELETE` records, replays them during `Open`, and compacts the log to retain only the latest live values.
+The persistent demo writes records, reopens the log, rebuilds the map, and compacts obsolete history.

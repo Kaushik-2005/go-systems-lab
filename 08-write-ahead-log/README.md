@@ -2,24 +2,52 @@
 
 ## What it is
 
-An append-only log that records ordered mutations before a system applies them to in-memory state.
+Lets say your application changes some state and then crashes before the change is saved. A write-ahead log records the change first so it can be replayed later.
 
-## What it solves
+```text
+mutation -> write to WAL -> apply to memory
+restart  -> replay WAL    -> rebuild state
+```
 
-After a process restarts, the log can be replayed to rebuild state. Sequence numbers preserve mutation order, checksums detect corrupted records, and incomplete final records can be discarded safely.
+## How it works
+
+The log appends ordered JSON records. Every record has a sequence number and checksum.
+
+```text
+sequence=0 -> mutation A
+sequence=1 -> mutation B
+sequence=2 -> mutation C
+```
+
+It also handles:
+
+- append-only writes;
+- monotonically increasing sequence numbers;
+- startup replay;
+- SHA-256 checksum validation;
+- complete-record corruption detection;
+- incomplete final-record recovery.
 
 ## Project structure
 
 ```text
-wal/wal.go        record format, append, replay, checksum, tail recovery
-cmd/demo/main.go  runnable demonstration
+wal/          record format, append, replay, and validation
+cmd/demo/     append and recovery demonstration
 go.mod
 ```
 
 ## Run it
 
+Run from the `08-write-ahead-log` directory:
+
 ```powershell
 go run .\cmd\demo\main.go
 ```
 
-The demo appends records and prints their sequence numbers. `wal.log` can be inspected to see the JSON records and checksums.
+Inspect the log with:
+
+```powershell
+Get-Content .\wal.log
+```
+
+The demo prints sequence numbers and writes the records to `wal.log`. Corrupting a complete record triggers checksum rejection, while an incomplete final record is removed during recovery.

@@ -1,114 +1,41 @@
 # Rate Limiter Design
 
-## What it solves
+## The problem
 
-A rate limiter protects work by deciding whether a request may proceed:
-
-```text
-Limiter.Allow(key)
-       |
-       +--> true  -> perform the operation
-       `--> false -> reject the operation
-```
-
-The key identifies who owns the quota. Different clients have different state, so one client's requests do not consume another client's allowance.
-
-All algorithms implement:
+A service needs a simple decision before doing work: should this request be allowed? The key identifies the quota owner, such as a client, user, API token, or resource.
 
 ```go
 Allow(key string) bool
 ```
 
-The caller uses the same interface while the internal counting method changes.
+Every algorithm has per-key state. Checking the state and updating it must happen together, otherwise concurrent requests can all observe the same old count and exceed the limit.
 
-## The important concurrency rule
-
-Checking the limit and updating the state must be one protected operation.
-
-Without that rule, two goroutines could both see a count of two, both decide that a limit of three allows them, and both update the count. The result would be more accepted requests than the limit permits.
-
-Each limiter protects its per-key map and check-update operation with a mutex.
-
-## Algorithm designs
+## The four algorithms
 
 ### Fixed window
 
-State per key:
-
-```text
-window start + accepted count
-```
-
-On each request:
-
-1. load or create the key state;
-2. reset it if the fixed window expired;
-3. reject when the count reaches the limit;
-4. otherwise increment and accept.
-
-The algorithm is inexpensive, but a client can use its full allowance at the end of one window and again at the beginning of the next.
+Stores a window start and a counter for each key. The counter resets when the window expires. It is simple and cheap, but a client can use its full allowance at the end of one window and immediately use it again at the start of the next.
 
 ### Sliding-window log
 
-State per key:
-
-```text
-timestamps of accepted requests
-```
-
-Old timestamps are removed on every request. The remaining timestamps are the exact accepted requests inside the rolling interval. This is accurate but uses memory proportional to recent traffic.
+Stores timestamps for accepted requests. Old timestamps leave the log as time moves forward, so the remaining timestamps give an exact rolling count. The trade-off is memory usage.
 
 ### Sliding-window counter
 
-State per key:
-
-```text
-previous count + current count + current window start
-```
-
-The previous count is weighted by the part of that window that overlaps the rolling interval:
-
-```text
-estimated requests = previous count * overlap + current count
-```
-
-It uses constant-size state and gives an estimate rather than an exact timestamp count.
+Stores the previous and current window counts. It weights the previous count by the amount of overlap with the rolling interval. This uses constant-size state but produces an estimate.
 
 ### Token bucket
 
-State per key:
+Stores available tokens and the last refill time. Elapsed time adds tokens up to the capacity, and an accepted request consumes one token. Capacity controls bursts; refill rate controls sustained traffic.
+
+## Concurrency and repository design
+
+Each limiter protects its map and check-update operation with a mutex. The limiter is local to one process, so separate processes do not share quota state.
 
 ```text
-tokens available + last refill time
+ratelimiter/      shared Limiter interface
+algorithms/       four limiting implementations
+cmd/fixedwindow/  configuration and runnable demonstrations
 ```
 
-On each request:
-
-1. calculate tokens earned since the last request;
-2. cap the bucket at its capacity;
-3. reject if fewer than one token is available;
-4. consume one token and accept otherwise.
-
-Capacity controls burst size. Refill rate controls the long-term rate.
-
-## Repository design
-
-```text
-ratelimiter/      Limiter interface and shared definitions
-algorithms/       four state and decision implementations
-cmd/fixedwindow/  command-line experiments
-```
-
-The command supplies algorithm parameters and prints decisions. The algorithm packages own the maps, timestamps, counters, and token state.
-
-## Demonstrations
-
-The fixed-window boundary experiment sends two batches just over one window apart. Both batches can pass, which demonstrates the boundary burst.
-
-The sliding-log experiment sends the second batch before the rolling window expires. The earlier timestamps are still present, so the second batch is rejected.
-
-The token-bucket experiment begins with a burst equal to the bucket capacity. Later requests are accepted only as tokens refill.
-
-## Guarantees and scope
-
-The implementation provides per-key, synchronized admission decisions inside one process. State disappears when the process stops, and separate processes do not share quotas. The sliding-window counter is intentionally approximate. The package is a limiter mechanism, not HTTP middleware or a distributed rate-limiting service.
+The demos make the differences visible: fixed-window boundary bursts, exact sliding-log rejection, sliding-counter estimation, and token-bucket refill behavior.
