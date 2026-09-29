@@ -126,6 +126,18 @@ A fault-tolerance wrapper that stops calling a repeatedly failing dependency.
 
 Design: [09-circuit-breaker/design.md](09-circuit-breaker/design.md)
 
+### 10. [Service Discovery](10-service-discovery/README.md)
+
+An in-memory registry where services register addresses and clients discover live instances.
+
+- service registration and lookup;
+- multiple instances per service;
+- heartbeat and TTL leases;
+- stale-instance cleanup;
+- HTTP registration, lookup, heartbeat, and deregistration.
+
+Design: [10-service-discovery/design.md](10-service-discovery/design.md)
+
 ## Building approach
 
 Each component is developed through observable steps:
