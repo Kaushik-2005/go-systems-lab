@@ -138,6 +138,17 @@ An in-memory registry where services register addresses and clients discover liv
 
 Design: [10-service-discovery/design.md](10-service-discovery/design.md)
 
+### 11. [Distributed Lock](11-distributed-lock/README.md)
+
+A lease-based lock that gives one client ownership at a time and returns fencing tokens to reject stale clients.
+
+- acquire, renew, and release;
+- lease expiration;
+- owner and token validation;
+- HTTP lock service.
+
+Design: [11-distributed-lock/design.md](11-distributed-lock/design.md)
+
 ## Building approach
 
 Each component is developed through observable steps:
