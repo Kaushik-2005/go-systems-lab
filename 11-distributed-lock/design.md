@@ -24,18 +24,18 @@ The lock stores:
 acquire(owner)
        |
        v
- free? ── no ──> rejected
-   |
-  yes
-   |
-   v
- issue token + expiration
+free? ── no ──> rejected
+       |
+yes
        |
        v
- renew before expiry, or release
+issue token + expiration
        |
        v
- expiry makes the lock available
+renew before expiry, or release
+       |
+       v
+expiry makes the lock available
 ```
 
 ## Concurrency and HTTP

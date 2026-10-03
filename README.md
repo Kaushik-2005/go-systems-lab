@@ -149,6 +149,39 @@ A lease-based lock that gives one client ownership at a time and returns fencing
 
 Design: [11-distributed-lock/design.md](11-distributed-lock/design.md)
 
+### 12. [Replicated Key-Value Store](12-replicated-kv-store/README.md)
+
+A leader/follower store where the leader accepts writes and followers pull ordered records to keep local copies.
+
+- leader-only writes;
+- ordered replication records;
+- asynchronous follower updates;
+- reconnect and catch-up;
+- observable replication sequence.
+
+Design: [12-replicated-kv-store/design.md](12-replicated-kv-store/design.md)
+
+## Where these components are used
+
+These components usually appear together inside larger services. Each one solves a different problem:
+
+| Component | Purpose | Real-world examples |
+| --- | --- | --- |
+| Load balancer | Spreads incoming traffic across healthy servers. | Web applications, API gateways, ingress controllers. |
+| Rate limiter | Controls how often a client or resource can be used. | Login protection, public APIs, payment and messaging quotas. |
+| LRU cache | Keeps frequently reused data close to the application. | Database query caching, session data, computed results. |
+| Consistent hashing | Routes a key to a node while reducing movement when nodes change. | Distributed caches, sharded databases, partitioned message systems. |
+| Message queue | Stores work until a consumer can process it. | Email sending, image processing, background jobs, order fulfillment. |
+| Pub/Sub broker | Sends one event independently to many interested subscribers. | Notifications, analytics events, audit streams, service integration. |
+| Key-value store | Stores and retrieves data by a simple key. | Configuration, feature flags, metadata, local embedded storage. |
+| Write-ahead log | Records mutations so state can be recovered after a crash. | Databases, replicated logs, durable queues, storage engines. |
+| Circuit breaker | Stops calling a failing dependency so failures do not spread. | Service-to-service calls, payment providers, external APIs. |
+| Service discovery | Helps clients find the current instances of a service. | Microservices, container platforms, dynamically scaled workers. |
+| Distributed lock | Coordinates work so only one client owns a shared operation. | Leader selection, scheduled jobs, migrations, duplicate-work prevention. |
+| Replicated key-value store | Keeps copies of data across processes for availability and reads. | Primary/replica databases, configuration stores, read scaling. |
+
+For example, an order service might use a load balancer to receive traffic, a rate limiter to protect its API, a circuit breaker around the payment provider, a message queue for fulfillment work, and a replicated store for order data.
+
 ## Building approach
 
 Each component is developed through observable steps:
