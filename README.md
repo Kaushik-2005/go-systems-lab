@@ -161,6 +161,21 @@ A leader/follower store where the leader accepts writes and followers pull order
 
 Design: [12-replicated-kv-store/design.md](12-replicated-kv-store/design.md)
 
+### 13. [Sharding Router](13-sharding-router/README.md)
+
+A routing layer that maps keys to storage shards using deterministic hashing.
+
+- shard abstraction;
+- deterministic key-to-shard routing;
+- hash-based partitioning;
+- range-based partitioning;
+- per-shard in-memory map;
+- shard addition and removal;
+- basic key migration and rebalancing;
+- key redistribution demonstration.
+
+Design: [13-sharding-router/design.md](13-sharding-router/design.md)
+
 ## Where these components are used
 
 These components usually appear together inside larger services. Each one solves a different problem:
@@ -179,6 +194,7 @@ These components usually appear together inside larger services. Each one solves
 | Service discovery | Helps clients find the current instances of a service. | Microservices, container platforms, dynamically scaled workers. |
 | Distributed lock | Coordinates work so only one client owns a shared operation. | Leader selection, scheduled jobs, migrations, duplicate-work prevention. |
 | Replicated key-value store | Keeps copies of data across processes for availability and reads. | Primary/replica databases, configuration stores, read scaling. |
+| Sharding router | Decides which storage partition owns a key. | Distributed databases, partitioned caches, large-scale key-value services. |
 
 For example, an order service might use a load balancer to receive traffic, a rate limiter to protect its API, a circuit breaker around the payment provider, a message queue for fulfillment work, and a replicated store for order data.
 
