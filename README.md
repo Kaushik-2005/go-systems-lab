@@ -176,6 +176,28 @@ A routing layer that maps keys to storage shards using deterministic hashing.
 
 Design: [13-sharding-router/design.md](13-sharding-router/design.md)
 
+### 14. [Leader Election](14-leader-election/README.md)
+
+A state machine that chooses one coordinator from a group of nodes using terms and majority voting.
+
+- follower, candidate, and leader states;
+- term numbers;
+- one vote per term;
+- majority election rule;
+- higher-term step-down.
+
+Design: [14-leader-election/design.md](14-leader-election/design.md)
+
+### 15. [Distributed Cache](15-distributed-cache/README.md)
+
+A cache node that will be composed into a distributed cache using routing, replication, and health awareness.
+
+- custom LRU eviction;
+- TTL expiration;
+- concurrency-safe cache access.
+
+Design: [15-distributed-cache/design.md](15-distributed-cache/design.md)
+
 ## Where these components are used
 
 These components usually appear together inside larger services. Each one solves a different problem:
@@ -195,6 +217,8 @@ These components usually appear together inside larger services. Each one solves
 | Distributed lock | Coordinates work so only one client owns a shared operation. | Leader selection, scheduled jobs, migrations, duplicate-work prevention. |
 | Replicated key-value store | Keeps copies of data across processes for availability and reads. | Primary/replica databases, configuration stores, read scaling. |
 | Sharding router | Decides which storage partition owns a key. | Distributed databases, partitioned caches, large-scale key-value services. |
+| Leader election | Chooses one coordinator among several nodes. | Replicated databases, cluster controllers, distributed schedulers. |
+| Distributed cache | Keeps frequently used data close to applications across several nodes. | Database caching, session lookup, computed results, API response caching. |
 
 For example, an order service might use a load balancer to receive traffic, a rate limiter to protect its API, a circuit breaker around the payment provider, a message queue for fulfillment work, and a replicated store for order data.
 
