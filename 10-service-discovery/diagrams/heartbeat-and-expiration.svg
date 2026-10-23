@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" role="img" aria-labelledby="title desc"><title id="title">heartbeat and expiration</title><desc id="desc">Registration creates a lease, a heartbeat at six seconds extends it to sixteen, and a lookup or cleanup at seventeen removes the expired instance.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="470" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">TTL lease: heartbeats extend discovery eligibility</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Illustrative TTL = 10 seconds; the HTTP server uses 30-second leases.</text>
+<rect x="50" y="125" width="900" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">t = 0s: Register payments-1 -&gt; expiresAt = 10s</text>
+<path d="M 500 198 L 500 217" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="225" width="900" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="66" y="258" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">t = 6s: Heartbeat -&gt; expiresAt = now + TTL = 16s</text>
+<path d="M 500 298 L 500 317" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="325" width="900" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="66" y="358" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">t = 17s: No more heartbeats -&gt; cleanup or lookup removes the expired entry</text>
+<text x="50" y="447" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">A heartbeat after expiration fails. Register again to make the instance discoverable.</text></svg>

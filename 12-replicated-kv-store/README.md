@@ -2,104 +2,55 @@
 
 ## What it is
 
-This is a small leader/follower key-value store. Clients write to the leader, and follower processes pull the leader's ordered records and apply them locally.
-
-```text
-client
-  |
-  v
-leader :9100  -- ordered records -->  follower :9101
-                                      follower :9102
-```
-
-The followers are intentionally simple. They poll for records after their last sequence number. If a follower goes offline, the leader keeps its log in memory, and the follower catches up when it returns.
+This component keeps a leader's key-value state copied into follower processes. The leader accepts writes, while followers pull ordered mutation records and serve reads from their local maps.
 
 ## How it works
 
-There are two different roles:
+### Asynchronous leader / follower replication
 
-- The **leader** accepts `PUT` and `DELETE` operations.
-- A **follower** accepts reads and copies the leader's changes.
+![A leader write returns before a lagging follower polls for its next record and applies it](diagrams/asynchronous-replication.svg)
 
-The follower does not receive writes directly. It repeatedly asks the leader:
+Every leader `Put` or `Delete` allocates `lastSeq + 1`, applies the mutation to its map, and appends a record to its in-memory log. A record contains `sequence`, `key`, `value`, and a `deleted` flag. The sequence is the mutation's position in the whole log, rather than a per-key version.
 
-```text
-follower has sequence 1
-        |
-        v
-GET /records?from=1
-        |
-        v
-leader returns records 2, 3, ...
-        |
-        v
-follower applies them in order
-```
+The leader responds after its own update. It does not wait for followers, so a follower may temporarily return an older value or a miss. This keeps the write path simple but exposes replication lag and can lose writes if the leader disappears before followers copy them.
 
-Every leader write creates a record with an increasing sequence number. For example:
+Each follower polls `GET /records?from=N`, where N is its last applied sequence. It applies returned records in order and serves reads from its own map. The default interval is 500 ms, and the HTTP client timeout is two seconds. A failed poll is logged and retried on a later loop; it does not erase the follower's existing state.
 
-```text
-sequence  key       value       deleted
-1         language  Go          false
-2         database  systems     false
-3         language              true
-```
+### Sequence validation
 
-The sequence is the position of the change in the replication log. It is not a version number for one key. A follower uses it to know exactly where it stopped.
+![A follower at sequence two ignores record two, accepts record three, and rejects record four as a gap](diagrams/sequence-validation.svg)
 
-The leader applies a record locally before making it available through `/records`. The follower applies records in order and rejects a gap. Reapplying an old record is safe, so a polling retry does not corrupt the follower.
+`Apply(record)` ignores a sequence at or below `lastSeq`, accepts exactly `lastSeq + 1`, and returns `ErrOutOfOrder` for a gap. A put replaces the value; a delete removes the key. This makes repeated records harmless in the intended single-leader history, but does not check whether a duplicate sequence carries conflicting content.
 
-This is asynchronous replication. A successful leader write does not wait for followers to apply the record. Therefore, a follower can briefly return an older value.
+The leader retains records for catch-up through `RecordsAfter`. Followers advance their map and sequence without appending another copy of the replication log; they do not serve as downstream replication leaders.
 
-## What a normal write looks like
+### Reconnect and restart catch-up
 
-When this command runs:
+![A disconnected follower retains its sequence; a restarted process loses memory and replays the leader history from zero](diagrams/reconnect-and-restart.svg)
 
-```powershell
-Invoke-RestMethod -Method Put `
-  -Uri "http://localhost:9100/put?key=language&value=Go"
-```
+A running follower that loses connectivity keeps its last applied sequence. If it stopped at 2 and the leader advances to 4, reconnection requests records after 2 and applies 3 and 4.
 
-the flow is:
+A restarted follower loses its map and sequence. It starts at zero and replays the leader's retained history. Neither role persists state: restarting the leader loses the source log too. There is no epoch or snapshot protocol for reconciling an existing follower with a restarted leader's new history.
 
-1. The leader receives the request.
-2. It creates record 1 for `language=Go`.
-3. It stores the value locally.
-4. It returns the record to the client.
-5. The follower asks for records after its current sequence.
-6. The follower applies record 1.
+## Concurrency and limits
 
-The leader response looks like this:
+A `sync.RWMutex` protects each store. Leader writes and follower apply operations take the write lock; map reads, sequence reads, and record copies take the read lock. The polling goroutine can run alongside follower HTTP readers.
 
-```text
-sequence key      value deleted
-1        language Go    False
-```
-
-The follower response looks like this:
-
-```text
-found sequence value
-True  1        Go
-```
-
-`found=True` means the follower has the key, `value=Go` is the replicated value, and `sequence=1` shows that the follower has applied the first record.
-
-This is asynchronous replication. A successful leader write does not wait for followers to apply the record.
+Map access is O(1) on average. Catch-up copies and transmits the requested suffix of an unbounded in-memory log. There is no durable storage, quorum acknowledgement, automatic promotion, or leader election. If the leader stops, followers can still serve their last known state, but new writes are unavailable.
 
 ## Project structure
 
 ```text
-12-replicated-kv-store/
-├── store/store.go          # state, ordered records, and replication apply logic
-└── cmd/
-    ├── leader/main.go      # write API and replication log API
-    └── follower/main.go    # polling replica and local read API
+store/store.go        state, ordered records, and apply logic
+cmd/leader/main.go    write API and source replication log
+cmd/follower/main.go  polling replica and local read API
+diagrams/             SVG illustrations
+go.mod
 ```
 
 ## Run it
 
-Start the leader:
+Run from the `12-replicated-kv-store` directory. Start the leader:
 
 ```bash
 go run ./cmd/leader -addr :9100
@@ -142,7 +93,7 @@ The leader returns `sequence=2`, but the stopped follower has not seen it yet. S
 go run ./cmd/follower -addr :9101 -leader http://localhost:9100
 ```
 
-After one polling interval, read from the follower:
+After a successful polling attempt, read from the follower:
 
 ```powershell
 Invoke-RestMethod `
@@ -156,7 +107,7 @@ found sequence value
 True  2        systems
 ```
 
-The follower remembered that its last sequence was 1. After restarting, it requested records after 1, received record 2, and caught up.
+Restarting the follower lost its previous map and sequence. It requested records after zero, replayed records 1 and 2 from the still-running leader, and rebuilt its state.
 
 ## Useful endpoints
 

@@ -2,88 +2,63 @@
 
 ## What it is
 
-A sharding router decides which storage node should handle a key. Instead of keeping every key on every node, the data is split across shards.
-
-```text
-client
-  |
-  v
-router -- user-1  --> shard-a
-       -- user-2  --> shard-c
-       -- order-1 --> shard-b
-```
-
-The first version uses a hash of the key and maps it to one of the configured shards.
+A sharding router maps each key to one storage partition. The router owns placement metadata; a separate shard map stores the values in per-shard in-memory buckets.
 
 ## How it works
 
-1. The router receives a key.
-2. It hashes the key with FNV-1a.
-3. It takes the hash modulo the number of shards.
-4. The resulting index selects the shard.
+### Hash-based routing
 
-The same key gets the same shard as long as the shard list stays unchanged. The demo prints the mapping and repeats `user-1` to make that property visible.
+![FNV-1a hashing and modulo choose one shard, which both Put and Get use to access their bucket](diagrams/hash-routing.svg)
 
-## Shard map
+`Router` copies an ordered shard list. `Route(key)` computes `FNV-1a(key) % shardCount` and returns the shard at that index. An empty list returns `ErrNoShards`. The same key selects the same owner as long as both membership and ordering stay unchanged.
 
-The shard map adds storage to the router. It keeps a separate in-memory key/value map for each shard. A Put first asks the router for the owner shard, then stores the key in that shard. A Get repeats the same routing decision and reads from that shard.
+`ShardMap.Put` routes first, then writes into that shard's map. `Get` repeats the routing decision, reads the selected bucket, and reports both the result and owner. This keeps placement separate from storage.
 
-The demo begins with:
+Hash routing is O(1) for the modulo selection, plus the cost of hashing the key. It spreads keys across a fixed list without grouping them by their values.
 
-stored user-1: value="Kaushik" found=true shard=shard-b
+### Range-based routing
 
-This shows both parts working together: the value is stored and the router reports where it lives.
+![Half-open intervals group neighboring keys, with boundary keys belonging to the interval on their right](diagrams/range-routing.svg)
 
-## Range-based routing
+`RangeRouter` is a separate router with ordered half-open string intervals. Start is inclusive, End is exclusive, and an empty End represents infinity. For `[a, m)`, `[m, t)`, and `[t, infinity)`, apple routes to the first range, profile to the second, and user to the third. A key equal to `m` belongs to the second interval.
 
-The demo also creates ordered ranges:
+Construction copies and sorts ranges. `Route` scans them and selects the first containing the key; an uncovered key returns `ErrInvalidRanges`. Callers should supply non-overlapping intervals, with an unbounded End only on the final range. The demo starts the first range at the empty string so it also covers keys before `a`.
 
-[a, m) -> range-a
-[m, t) -> range-b
-[t, infinity) -> range-c
+Lookup is O(r) for r ranges. Nearby keys stay together, making ordered partitioning natural, but a popular range can become a hot shard. The current `ShardMap` uses the hash `Router`; the range router is demonstrated separately.
 
-A key is routed by comparing its value with the range boundaries. For example, apple goes to range-a, profile goes to range-b, and user goes to range-c.
+### Membership changes and migration
 
-Hash routing spreads keys without understanding their values. Range routing keeps nearby keys together, which is useful for ordered scans and range queries. Its trade-off is that one range can become much hotter than the others.
+![Adding a shard changes routes before stored values move; Rebalance rebuilds buckets under the new routing](diagrams/shard-rebalancing.svg)
 
-## Add and remove shards
+`AddShard` appends a new shard and rejects a duplicate with `ErrShardExists`. `RemoveShard` removes a known shard or returns `ErrShardNotFound`. Changing the list changes the modulo divisor, so many keys can acquire a new owner.
 
-The demo starts with three shards, records where eight keys go, adds shard-d, and routes the same keys again. It prints how many keys moved:
+Membership changes do not move values automatically. `ShardMap.Rebalance` creates fresh buckets for the current shards, re-routes every stored key, copies it into its new bucket, and replaces the bucket map. It returns how many records changed owner. Before migration, a key whose route changed can miss even though its value remains in an old bucket.
 
-after adding shard-d: moved=3/8
+Rebalancing is O(k + s) for k stored records and s shards, aside from hashing and allocation. It needs temporary space for rebuilt buckets and blocks shard-map readers and writers while copying.
 
-The exact keys depend on the hash and shard names, but the important point is that changing the shard count changes the modulo divisor. A key that was on one shard may now point to another shard, so its data would need to move too.
+## Concurrency and limits
 
-The demo then removes shard-d and prints another redistribution count. This is why simple modulo hashing is easy to understand but awkward when nodes change.
+The router uses `sync.RWMutex` for its shard list. The shard map has its own mutex for values. These locks protect their individual structures, but a route and subsequent storage operation do not hold a shared membership snapshot. Coordinate membership changes and migration externally if traffic is concurrent.
+
+The implementation stores everything in one process and provides no networking, replication, persistent storage, or online migration protocol. Consistent hashing, implemented in component 4, is a different placement strategy that reduces remapping when membership changes.
 
 ## Project structure
 
 ```text
-13-sharding-router/
-├── shard/router.go       # deterministic key-to-shard routing
-├── shard/map.go          # per-shard in-memory key/value maps
-└── cmd/demo/main.go      # routing demonstration
+shard/router.go   deterministic hash routing and membership
+shard/range.go    interval-based routing
+shard/map.go      per-shard maps and rebalancing
+cmd/demo/main.go  routing and migration demonstration
+diagrams/         SVG illustrations
+go.mod
 ```
 
 ## Run it
 
-```bash
+Run from the `13-sharding-router` directory:
+
+```powershell
 go run ./cmd/demo
 ```
 
-Example output:
-
-```text
-before adding shard-d:
-key=cart-1 shard=shard-b
-key=cart-2 shard=shard-b
-key=order-1 shard=shard-b
-key=order-2 shard=shard-b
-key=profile-1 shard=shard-a
-key=user-1 shard=shard-b
-key=user-2 shard=shard-b
-key=user-3 shard=shard-c
-after adding shard-d: moved=3/8
-```
-
-The exact shard names for most keys depend on the hash, but repeated `user-1` stays on the same shard.
+The demo stores eight keys, prints routes, adds shard-d, rebalances stored records, and reads user-1 to show the value survived. It then removes shard-d and rebalances again. Output distinguishes `routes_moved` from `records_rebalanced`. A separate example routes apple, profile, user, and zebra through string ranges.

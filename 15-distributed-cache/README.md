@@ -2,58 +2,68 @@
 
 ## What it is
 
-A distributed cache keeps frequently used data close to the services that need it. This component now has multiple in-memory cache nodes behind a consistent-hash router.
-
-text
-application -> consistent-hash router -> cache-a
-                                      -> cache-b
-                                      -> cache-c
-
-Each node has its own custom LRU cache with TTL expiration. The router decides which node owns a key. With replication factor 2, the key is written to the primary and the next distinct node on the ring.
+This component composes local LRU caches with consistent-hash placement, replication, health-aware routing, and migration. Named nodes are in-memory objects inside one process, rather than independent network servers.
 
 ## How it works
 
+### Local cache nodes
 
-- A key is hashed onto a ring.
-- Virtual points on the ring improve distribution.
-- The router walks clockwise to find the node for the key.
-- Set and Get use the same routing decision.
-- Each selected node applies its own LRU and TTL rules.
-- Adding a node changes only a subset of key placements.
+![A two-entry cache promotes reads, evicts the least recently used entry, and removes expired values lazily](diagrams/local-node-cache.svg)
 
-The demo prints the replica nodes for user-1:
+Each `Node` has a key-to-entry map and a custom doubly linked list. The head is most recently used and the tail least recently used. `Set` inserts or updates an entry at the head and evicts the tail if capacity is exceeded. `Get` removes an expired entry or promotes a live one. `Delete` removes an entry from both structures.
 
-user-1 replicas: [cache-b cache-a]
+A positive TTL sets an expiration time; zero or a negative TTL means no expiration. `Entries` scans the node, removes expired entries, and returns a key/value snapshot. `Len` can include expired entries until a read or scan removes them. There is no background expiration loop.
 
-The first node is the primary used for reads. Both nodes receive writes. When cache-b is marked unhealthy, the router skips it and the read comes from cache-a:
+### Placement, replicas, and health
 
-The demo also prints the routes before and after adding cache-d:
+![Writes reach the current healthy replica set; a failed primary is skipped so reads use the next healthy owner](diagrams/replication-and-health.svg)
 
-after adding cache-d: moved=4/6 records_migrated=1
-after removing cache-d: value="Kaushik" found=true node=cache-b
+`NewCluster(names, capacity, replicas, replicationFactor)` creates named nodes and a sorted FNV-1a hash ring. Here `replicas` means virtual ring points per node, while `replicationFactor` means the number of physical nodes selected to hold a value. Both counts and capacity must be positive.
 
-after primary failure: value="Kaushik" found=true node=cache-a
+Routing hashes the key, binary-searches the first ring point at or after its hash, then walks clockwise and wraps as needed. It collects distinct healthy owners up to the requested replication factor. Repeated virtual points for one physical owner do not create extra copies. If too few nodes are healthy, routing returns the available subset; if none are healthy, it returns `ErrNoNodes`.
 
-The exact number depends on the keys and virtual-node layout. Existing values are not migrated yet, so a key that moves can temporarily miss. Replication and migration are both present. Rebalancing copies live values to their new primary/replica owners and removes stale copies. Removing a node migrates its values before the node leaves the cluster.
+`Set` writes sequentially to every selected owner and returns the first owner's name. `Get` reads only the first selected healthy owner. It does not try remaining replicas after a cache miss, even if one of them still has the value.
 
-## Run it
+`SetNodeHealth` changes a manual flag. It is not an active health probe. When the primary is marked unhealthy, routing skips it; a previously written replica may now serve the read. New writes use the current healthy set. A recovered node can contain stale values because there is no version reconciliation or read repair.
 
-go run ./cmd/demo
+### Membership changes and rebalancing
 
-Example output:
+![Rebalance gathers live values, copies them to current healthy owners, and removes values from undesired nodes](diagrams/cache-rebalancing.svg)
 
-get language: value="Go" found=true
-after capacity eviction: database_found=false
-ttl: before_expiry=true after_expiry=false
-cluster nodes: [cache-a cache-b cache-c]
-cluster get: value="Kaushik" found=true node=cache-b
-after adding cache-d: moved=4/6 records_migrated=1
-after removing cache-d: value="Kaushik" found=true node=cache-b
+`AddNode` adds an empty node and rebuilds the ring; it does not automatically migrate existing values. Routes can change immediately, so callers can see misses before rebalancing.
+
+`Rebalance` scans nodes in name order, gathers live values, computes their current healthy owners, writes the primary and replicas, then deletes copies on undesired nodes. If replicas disagree, the first scanned value wins; there are no versions to decide which copy is newer. Its moved count compares the first scanned source name with the new primary, rather than counting every replica copy.
+
+`RemoveNode` snapshots that node's live entries, removes membership and rebuilds the ring, then writes those entries to the remaining selected owners while holding the membership write lock. It rejects removing the last node. This is a local migration operation and does not simulate recovering data from an unreachable remote server.
+
+Migration calls `Set` with TTL zero. Original expiration times are not preserved, so moved values become non-expiring. Capacity eviction can also remove values while migration copies entries. These are simplifications of the current implementation.
+
+## Concurrency, cost, and limits
+
+The cluster's `sync.RWMutex` protects membership, health flags, and ring metadata. Each node has its own mutex for the map and recency list. `Set` and `Get` release the membership read lock after choosing node pointers and before accessing values; they do not provide an atomic operation across membership changes.
+
+Rebalance holds a membership read lock, but cache writes can still run concurrently. Its scans and copies are not a transactional snapshot, so migration should be coordinated with writes when preserving the latest value matters.
+
+Local lookup and eviction are O(1) on average. Routing starts with O(log p) binary search for p ring points, then may walk the ring to find healthy distinct owners. Rebalancing scans entries and writes selected copies, so cost grows with stored data and replication factor.
+
+All values disappear on process restart. There is no network transport, durable storage, consensus, quorum protocol, automatic health detection, or conflict resolution in this component.
 
 ## Project structure
 
-text
-15-distributed-cache/
-├── cache/node.go         # one concurrency-safe LRU + TTL cache node
-├── cache/cluster.go      # virtual-node ring and cluster routing
-└── cmd/demo/main.go      # local node and multi-node demonstration
+```text
+cache/node.go     local LRU list, TTL, and snapshots
+cache/cluster.go  hash ring, replicas, health, and migration
+cmd/demo/main.go  local-node and multi-node demonstrations
+diagrams/         SVG illustrations
+go.mod
+```
+
+## Run it
+
+Run from the `15-distributed-cache` directory:
+
+```powershell
+go run ./cmd/demo
+```
+
+The demo shows local eviction and TTL, creates three nodes with 20 virtual points each and replication factor two, writes and reads user-1, marks its primary unhealthy, then adds cache-d and rebalances. It finally removes cache-d and reads the key again. Output reports selected owners, changed routes, and migrated records.

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="505" viewBox="0 0 1000 505" role="img" aria-labelledby="title desc"><title id="title">cache rebalancing</title><desc id="desc">Rebalance scans live values, copies them to current healthy replicas and deletes undesired copies. Migration does not preserve TTL or resolve versions.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="505" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Cache rebalance: copy to current owners, remove stale placement</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Illustrative old replicas = [A, B]  |  new replicas after membership change = [B, C]</text>
+<rect x="50" y="125" width="900" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">1. Scan Entries on each node -&gt; gather live key/value pairs</text>
+<path d="M 500 198 L 500 217" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="225" width="900" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="258" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">2. Resolve current healthy replicas -&gt; write this key to B and C</text>
+<path d="M 500 298 L 500 317" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="325" width="900" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="66" y="358" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">3. Delete this key from A, which is no longer a desired owner</text>
+<text x="50" y="447" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#b91c1c">Migration writes use TTL = 0, so original expiration times are not preserved.</text>
+<text x="50" y="481" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">There are no versions to resolve conflicting copies; the first scanned value wins.</text></svg>

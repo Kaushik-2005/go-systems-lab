@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">modulo routing</title><desc id="desc">Changing from three to four nodes remaps illustrative hash outputs 7, 8, and 9.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#ffffff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Modulo routing: changing the divisor moves keys</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Illustrative hash outputs  |  node order before: [A, B, C]  |  after: [A, B, C, D]</text>
+<text x="60" y="140" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">hash(key)</text>
+<text x="300" y="140" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">With 3 nodes</text>
+<text x="625" y="140" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">With 4 nodes</text>
+<rect x="50" y="162" width="185" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="195" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">7</text>
+<rect x="290" y="162" width="260" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="306" y="195" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">7 % 3 = 1 -&gt; B</text>
+<path d="M 560 186 L 610 186" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="620" y="162" width="320" height="48" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="636" y="195" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">7 % 4 = 3 -&gt; D</text>
+<rect x="50" y="226" width="185" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="259" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">8</text>
+<rect x="290" y="226" width="260" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="306" y="259" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">8 % 3 = 2 -&gt; C</text>
+<path d="M 560 250 L 610 250" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="620" y="226" width="320" height="48" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="636" y="259" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">8 % 4 = 0 -&gt; A</text>
+<rect x="50" y="290" width="185" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="323" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">9</text>
+<rect x="290" y="290" width="260" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="306" y="323" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">9 % 3 = 0 -&gt; A</text>
+<path d="M 560 314 L 610 314" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="620" y="290" width="320" height="48" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="636" y="323" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">9 % 4 = 1 -&gt; B</text>
+<text x="50" y="405" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">All three example keys move, even though only one node was added.</text>
+<text x="50" y="436" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Modulo lookup is O(1), but membership changes can remap a large fraction of keys.</text></svg>

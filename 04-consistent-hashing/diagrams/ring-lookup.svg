@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="480" viewBox="0 0 1000 480" role="img" aria-labelledby="title desc"><title id="title">ring lookup</title><desc id="desc">Key hash 30 routes to B at 45. Hash 95 wraps to A at 10. Ring points are sorted for binary search.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="480" fill="#ffffff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Ring lookup: choose the first point clockwise</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Illustrative positions on a 0-99 ring; the implementation uses a 32-bit hash space.</text>
+<circle cx="270" cy="245" r="125" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<circle cx="343.47315653655915" cy="143.87287570313157" r="11" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<circle cx="308.62712429686843" cy="363.8820645368942" r="11" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<circle cx="151.1179354631058" cy="206.3728757031316" r="11" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="340" y="131" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">A: 10</text>
+<text x="308" y="401" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">B: 45</text>
+<text x="67" y="219" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">C: 80</text>
+<circle cx="388.8820645368942" cy="283.62712429686843" r="8" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2"/>
+<text x="402" y="286" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#7e22ce">key: 30</text>
+<path d="M 384.8820645368942 297.62712429686843 L 320.62712429686843 351.8820645368942" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="209" y="242" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563eb">Clockwise</text>
+<text x="224" y="268" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#53647a">0 -&gt; 99</text>
+<rect x="545" y="120" width="405" height="95" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="561" y="153" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Sorted points: [10, 45, 80]</text>
+<text x="562" y="181" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Search for the first point &gt;= key hash.</text>
+<rect x="545" y="240" width="405" height="72" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="561" y="273" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">hash 30 -&gt; point 45 -&gt; node B</text>
+<rect x="545" y="335" width="405" height="72" rx="8" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2"/>
+<text x="561" y="368" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#7e22ce">hash 95 -&gt; wrap to 10 -&gt; node A</text>
+<text x="50" y="456" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Binary search is O(log p), where p is the number of ring points.</text></svg>

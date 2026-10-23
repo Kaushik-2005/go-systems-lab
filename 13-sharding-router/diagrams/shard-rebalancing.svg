@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" role="img" aria-labelledby="title desc"><title id="title">shard rebalancing</title><desc id="desc">Adding D changes the route from B to D before data moves. Rebalance rebuilds buckets so Get finds the value at D.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="470" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Rebalancing: route changes before stored values move</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Illustrative hash = 7; add shard D to change the divisor from 3 to 4.</text>
+<rect x="50" y="125" width="900" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Before: 7 % 3 = 1 -&gt; B; key is stored in B</text>
+<path d="M 500 198 L 500 217" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="225" width="900" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="66" y="258" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">After AddShard(D): 7 % 4 = 3 -&gt; D; Get can miss before migration</text>
+<path d="M 500 298 L 500 317" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="325" width="900" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="66" y="358" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Rebalance: rebuild buckets with current routes -&gt; key is copied into D</text>
+<text x="50" y="447" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Coordinate membership changes and migration externally; their locks are separate.</text></svg>

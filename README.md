@@ -17,6 +17,8 @@ The goal is not production infrastructure. The goal is to make each mechanism sm
 
 ## Components
 
+Each component's README contains its overview, design explanations, diagrams, and run commands. The links below jump directly to the illustrated explanations.
+
 ### 1. [Load Balancer](01-load-balancer/README.md)
 
 An HTTP reverse proxy that distributes requests across backend servers.
@@ -62,7 +64,7 @@ A hash ring that routes keys to nodes while minimizing movement when nodes chang
 - virtual nodes;
 - key redistribution demonstration.
 
-Design: [04-consistent-hashing/design.md](04-consistent-hashing/design.md)
+Algorithms and diagrams: [Consistent Hashing README](04-consistent-hashing/README.md#ring-lookup)
 
 ### 5. [Message Queue](05-message-queue/README.md)
 
@@ -74,7 +76,7 @@ An in-memory broker that separates producers from consumers.
 - in-flight messages and visibility timeout;
 - redelivery, retry limit, and dead-letter queue.
 
-Design: [05-message-queue/design.md](05-message-queue/design.md)
+Design and diagrams: [Message Queue README](05-message-queue/README.md#fifo-delivery)
 
 ### 6. [Pub/Sub Broker](06-pub-sub-broker/README.md)
 
@@ -86,7 +88,7 @@ A topic-based broker that sends each event to every subscriber of that topic.
 - concurrent publication;
 - blocking and non-blocking slow-subscriber policies.
 
-Design: [06-pub-sub-broker/design.md](06-pub-sub-broker/design.md)
+Design and diagrams: [Pub/Sub Broker README](06-pub-sub-broker/README.md#subscribe-and-fan-out)
 
 ### 7. [Key-Value Store](07-key-value-store/README.md)
 
@@ -99,7 +101,7 @@ An in-memory key-value store backed by an append-only log.
 - compaction of obsolete records;
 - concurrency-safe access.
 
-Design: [07-key-value-store/design.md](07-key-value-store/design.md)
+Design and diagrams: [Key-Value Store README](07-key-value-store/README.md#writes-and-tombstones)
 
 ### 8. [Write-Ahead Log](08-write-ahead-log/README.md)
 
@@ -107,12 +109,12 @@ An append-only durability log that records ordered mutations before state is app
 
 - monotonically increasing sequence numbers;
 - JSON record encoding;
-- replay during startup;
-- SHA-256 checksums;
+- startup record validation;
+- SHA-224 checksums;
 - corruption detection;
 - incomplete-tail recovery.
 
-Design: [08-write-ahead-log/design.md](08-write-ahead-log/design.md)
+Design and diagrams: [Write-Ahead Log README](08-write-ahead-log/README.md#append-and-sync)
 
 ### 9. [Circuit Breaker](09-circuit-breaker/README.md)
 
@@ -124,7 +126,7 @@ A fault-tolerance wrapper that stops calling a repeatedly failing dependency.
 - recovery probes;
 - concurrency-safe state transitions.
 
-Design: [09-circuit-breaker/design.md](09-circuit-breaker/design.md)
+Design and diagrams: [Circuit Breaker README](09-circuit-breaker/README.md#closed-open-and-half-open-states)
 
 ### 10. [Service Discovery](10-service-discovery/README.md)
 
@@ -136,7 +138,7 @@ An in-memory registry where services register addresses and clients discover liv
 - stale-instance cleanup;
 - HTTP registration, lookup, heartbeat, and deregistration.
 
-Design: [10-service-discovery/design.md](10-service-discovery/design.md)
+Design and diagrams: [Service Discovery README](10-service-discovery/README.md#registration-and-lookup)
 
 ### 11. [Distributed Lock](11-distributed-lock/README.md)
 
@@ -147,7 +149,7 @@ A lease-based lock that gives one client ownership at a time and returns fencing
 - owner and token validation;
 - HTTP lock service.
 
-Design: [11-distributed-lock/design.md](11-distributed-lock/design.md)
+Design and diagrams: [Distributed Lock README](11-distributed-lock/README.md#acquire-renew-and-release)
 
 ### 12. [Replicated Key-Value Store](12-replicated-kv-store/README.md)
 
@@ -159,7 +161,7 @@ A leader/follower store where the leader accepts writes and followers pull order
 - reconnect and catch-up;
 - observable replication sequence.
 
-Design: [12-replicated-kv-store/design.md](12-replicated-kv-store/design.md)
+Design and diagrams: [Replicated Key-Value Store README](12-replicated-kv-store/README.md#asynchronous-leader--follower-replication)
 
 ### 13. [Sharding Router](13-sharding-router/README.md)
 
@@ -174,7 +176,7 @@ A routing layer that maps keys to storage shards using deterministic hashing.
 - basic key migration and rebalancing;
 - key redistribution demonstration.
 
-Design: [13-sharding-router/design.md](13-sharding-router/design.md)
+Design and diagrams: [Sharding Router README](13-sharding-router/README.md#hash-based-routing)
 
 ### 14. [Leader Election](14-leader-election/README.md)
 
@@ -186,17 +188,20 @@ A state machine that chooses one coordinator from a group of nodes using terms a
 - majority election rule;
 - higher-term step-down.
 
-Design: [14-leader-election/design.md](14-leader-election/design.md)
+Design and diagrams: [Leader Election README](14-leader-election/README.md#follower-candidate-and-leader-states)
 
 ### 15. [Distributed Cache](15-distributed-cache/README.md)
 
-A cache node that will be composed into a distributed cache using routing, replication, and health awareness.
+A multi-node in-memory cache model combining consistent-hash routing, replication, and health-aware placement.
 
 - custom LRU eviction;
 - TTL expiration;
-- concurrency-safe cache access.
+- concurrency-safe cache access;
+- virtual-node routing and replication;
+- manual node health and failover routing;
+- node addition, removal, and rebalancing.
 
-Design: [15-distributed-cache/design.md](15-distributed-cache/design.md)
+Design and diagrams: [Distributed Cache README](15-distributed-cache/README.md#local-cache-nodes)
 
 ## Where these components are used
 
@@ -239,7 +244,7 @@ find a failure or trade-off
 add the concept that addresses it
 ```
 
-Every component has runnable Go code and a practical README. The load balancer, rate limiter, and LRU cache keep their design explanations and diagrams in their READMEs. The remaining components have separate design documents covering data structures, algorithms, concurrency, and failure behavior.
+Every component has runnable Go code and a README containing its design explanations and diagrams. Each README covers the data structures, algorithms, concurrency, failure behavior, and trade-offs alongside commands for running the component.
 
 ## Language and dependencies
 

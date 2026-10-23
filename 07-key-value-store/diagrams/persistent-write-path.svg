@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="475" viewBox="0 0 1000 475" role="img" aria-labelledby="title desc"><title id="title">persistent write path</title><desc id="desc">Persistent Put and Delete encode, append and sync a JSON record before changing the map. Get reads the map; errors prevent the memory mutation.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="475" fill="#ffffff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Persistent writes: append and sync before changing memory</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Open(path) enables the log. New() creates a map-only store.</text>
+<rect x="50" y="145" width="180" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="178" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Put or Delete</text>
+<rect x="290" y="145" width="180" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="306" y="178" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Encode JSON</text>
+<rect x="530" y="145" width="190" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="546" y="178" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Append + Sync</text>
+<rect x="780" y="145" width="170" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="796" y="178" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Update map</text>
+<path d="M 240 185 L 280 185" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 480 185 L 520 185" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 730 185 L 770 185" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="285" width="420" height="75" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="66" y="318" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Get(key): read the in-memory map</text>
+<rect x="530" y="285" width="420" height="75" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="546" y="318" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Write or sync error: return error</text>
+<text x="50" y="424" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Delete writes a tombstone for an existing key. Deleting a missing key writes nothing.</text>
+<text x="50" y="456" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The in-memory mutation happens only after the log operation succeeds.</text></svg>

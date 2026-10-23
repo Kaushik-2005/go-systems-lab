@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" role="img" aria-labelledby="title desc">
+  <title id="title">Unsubscribe and channel ownership</title>
+  <desc id="desc">The broker removes topic membership, then closes the subscription channel under its mutex. Consumers only receive and can drain buffered events after closure. A blocked publisher holds the subscription mutex, so unsubscribe must wait for a reader to free buffer space before it can close the channel.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker>
+  </defs>
+  <rect width="1000" height="760" fill="#ffffff"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="36" y="50" font-size="27" fill="#243247">Unsubscribe: remove membership, then close safely</text>
+    <text x="36" y="88" font-size="18" fill="#53647a">Two locks protect different things: topic membership and subscription delivery / closure.</text>
+
+    <rect x="50" y="120" width="260" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="66" y="151" font-size="19" fill="#2563eb">1. Remove membership</text>
+    <text x="66" y="183" font-size="17" fill="#243247">Hold broker.mu, remove entry,</text>
+    <text x="66" y="209" font-size="17" fill="#243247">then release broker.mu.</text>
+    <path d="M 320 175 L 360 175" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="370" y="120" width="260" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="386" y="151" font-size="19" fill="#2563eb">2. Close subscription</text>
+    <text x="386" y="183" font-size="17" fill="#243247">Hold s.mu, set closed = true,</text>
+    <text x="386" y="209" font-size="17" fill="#243247">close channel, release s.mu.</text>
+    <path d="M 640 175 L 680 175" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="690" y="120" width="260" height="110" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+    <text x="706" y="151" font-size="19" fill="#166534">3. Reader drains buffer</text>
+    <text x="706" y="183" font-size="17" fill="#243247">Buffered events can be read.</text>
+    <text x="706" y="209" font-size="17" fill="#243247">Empty + closed: ok = false.</text>
+
+    <text x="50" y="269" font-size="18" fill="#243247">The broker creates, sends, and closes. Consumers only receive through Messages().</text>
+    <text x="50" y="318" font-size="22" fill="#243247">Why a blocked Publish can delay step 2</text>
+
+    <rect x="50" y="350" width="900" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+    <text x="70" y="389" font-size="19" fill="#b91c1c">Publish holds s.mu and waits: buffer [E1] is full; E2 cannot enter.</text>
+    <path d="M 500 418 L 500 437" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="50" y="440" width="900" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="70" y="479" font-size="19" fill="#2563eb">Unsubscribe removes membership, then waits for s.mu before closing.</text>
+    <path d="M 500 508 L 500 527" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="50" y="530" width="900" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+    <text x="70" y="569" font-size="19" fill="#166534">Reader takes E1 -&gt; publish sends E2 -&gt; publish releases s.mu.</text>
+    <path d="M 500 598 L 500 617" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <rect x="50" y="620" width="900" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+    <text x="70" y="659" font-size="19" fill="#166534">Unsubscribe closes under s.mu -&gt; reader drains E2 -&gt; next receive returns ok = false.</text>
+
+    <text x="50" y="730" font-size="18" fill="#53647a">If the reader never frees space, blocked Publish and Unsubscribe can remain waiting.</text>
+  </g>
+</svg>

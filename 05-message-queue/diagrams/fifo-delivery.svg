@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">fifo delivery</title><desc id="desc">Consuming removes M1, the oldest pending message, and leaves M2 and M3. Processing completion order can differ.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#ffffff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">FIFO queue: the oldest pending message is taken first</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">One consumer per delivery; competing consumers share the pending queue.</text>
+<text x="50" y="145" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">Pending before Consume()</text>
+<rect x="350" y="115" width="155" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="366" y="148" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">M1: oldest</text>
+<rect x="540" y="115" width="155" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="556" y="148" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">M2</text>
+<rect x="730" y="115" width="155" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="746" y="148" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">M3</text>
+<path d="M 427 190 L 427 260" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="460" y="232" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#166534">Consume removes M1</text>
+<rect x="295" y="275" width="265" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="311" y="308" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Consumer A gets M1</text>
+<rect x="650" y="275" width="300" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="666" y="308" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Pending: [M2, M3]</text>
+<text x="50" y="404" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">The next Consume returns M2. Empty pending queue: return found = false.</text>
+<text x="50" y="436" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">FIFO is dequeue order. Concurrent consumers can finish work in a different order.</text></svg>

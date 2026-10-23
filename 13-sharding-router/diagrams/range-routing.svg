@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">range routing</title><desc id="desc">Half-open intervals route apple to range-a, m and profile to range-b, and t and user to range-c.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Range routing: keep neighboring keys together</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Half-open intervals include Start and exclude End; an empty End means infinity.</text>
+<rect x="50" y="135" width="270" height="155" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">[a, m) -&gt; range-a</text>
+<text x="68" y="212" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#243247">apple</text>
+<text x="68" y="250" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Keys before m</text>
+<rect x="365" y="135" width="270" height="155" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="381" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">[m, t) -&gt; range-b</text>
+<text x="383" y="212" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#243247">m, profile</text>
+<text x="383" y="250" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#166534">m belongs here</text>
+<rect x="680" y="135" width="270" height="155" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="696" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">[t, infinity) -&gt; range-c</text>
+<text x="698" y="212" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#243247">t, user</text>
+<text x="698" y="250" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">t belongs here</text>
+<text x="50" y="380" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">Route scans intervals in sorted order and selects the first containing the key.</text>
+<text x="50" y="424" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Gaps return ErrInvalidRanges. A popular interval can concentrate load on one shard.</text></svg>

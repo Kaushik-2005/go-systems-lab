@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">message lifecycle</title><desc id="desc">A message is pending, then in flight, then acknowledged. Expiration returns it to pending or moves it to the dead-letter queue.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#ffffff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Message lifecycle: ACK completes a delivery</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Publish creates an ID; Consume tracks the attempt and its visibility deadline.</text>
+<rect x="50" y="135" width="230" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Pending FIFO</text>
+<rect x="380" y="135" width="250" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="396" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">In-flight map</text>
+<rect x="740" y="135" width="210" height="70" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="756" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Acknowledged</text>
+<path d="M 290 170 L 370 170" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="296" y="129" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#243247">Consume</text>
+<path d="M 640 170 L 730 170" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="665" y="129" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#243247">Ack(id)</text>
+<path d="M 505 215 L 505 278" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="540" y="247" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#b91c1c">No ACK before deadline</text>
+<rect x="340" y="290" width="340" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="356" y="323" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Monitor removes expired entry</text>
+<path d="M 330 322 L 290 322" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="290" width="230" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="323" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Retry: pending tail</text>
+<path d="M 690 322 L 735 322" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="745" y="290" width="205" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="761" y="323" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Dead-letter queue</text>
+<text x="50" y="403" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Retry if attempts &lt; retryLimit. Otherwise move the message to the dead-letter queue.</text>
+<text x="50" y="436" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">ACK deletes the in-flight entry. It does not store a permanent completion record.</text></svg>

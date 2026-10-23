@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">majority voting</title><desc id="desc">A self-vote and B's vote form a majority even when C is unreachable. A lone candidate cannot win.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Majority voting: two votes win a three-node election</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Example term = 3  |  cluster membership = A, B, C</text>
+<rect x="50" y="140" width="270" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">A: candidate</text>
+<text x="68" y="210" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Votes for itself: 1 vote</text>
+<rect x="365" y="140" width="270" height="120" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="381" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">B: grants A a vote</text>
+<text x="383" y="210" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#166534">A now has 2 votes</text>
+<rect x="680" y="140" width="270" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="696" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">C: unreachable</text>
+<text x="698" y="210" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">No response, no vote</text>
+<path d="M 355 208 L 330 208" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="310" width="900" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="66" y="343" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">2 &gt; 3 / 2 -&gt; A becomes leader. With only its self-vote, A cannot become leader.</text>
+<text x="50" y="439" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Each node votes for at most one candidate per term. Duplicate received votes are ignored.</text></svg>

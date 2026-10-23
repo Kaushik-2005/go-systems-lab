@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">half open probe</title><desc id="desc">The first caller reserves the recovery probe flag; additional callers see it and return ErrOpen.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Half-open: one admitted probe, other callers rejected</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Example assumes earlier closed-state calls have finished.</text>
+<rect x="50" y="125" width="250" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Caller A arrives first</text>
+<rect x="375" y="125" width="250" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="391" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">probeRunning = true</text>
+<rect x="700" y="125" width="250" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="716" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Run dependency</text>
+<path d="M 310 157 L 365 157" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 635 157 L 690 157" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="255" width="250" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="288" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Callers B and C arrive</text>
+<path d="M 310 287 L 365 287" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="375" y="255" width="575" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="391" y="288" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Probe already running -&gt; return ErrOpen</text>
+<text x="50" y="394" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">The mutex protects admission; it is released while the dependency executes.</text>
+<text x="50" y="430" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">A failed probe restarts the open timeout. A successful probe resets failures to zero.</text></svg>

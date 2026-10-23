@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">visibility and retries</title><desc id="desc">M1 times out after its first delivery and is retried. After the second unacknowledged delivery times out it is dead-lettered.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#ffffff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Visibility timeout: retry, then dead-letter</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Example: visibility timeout = 2 seconds  |  retryLimit = 2 total delivery attempts</text>
+<rect x="50" y="135" width="260" height="95" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Consume M1</text>
+<text x="68" y="195" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#243247">Attempts = 1; deadline = t + 2s</text>
+<path d="M 320 182 L 365 182" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="375" y="135" width="250" height="95" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="391" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">First timeout scan</text>
+<text x="392" y="195" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#243247">1 &lt; 2 -&gt; requeue M1</text>
+<path d="M 635 182 L 680 182" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="690" y="135" width="260" height="95" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="706" y="168" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Consume M1 again</text>
+<text x="708" y="195" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#243247">Attempts = 2; new deadline</text>
+<path d="M 820 240 L 820 285" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="535" y="295" width="415" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="551" y="328" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Second timeout scan: 2 &gt;= 2</text>
+<text x="553" y="354" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#b91c1c">Move M1 to the dead-letter queue.</text>
+<text x="50" y="319" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">The ID stays the same.</text>
+<text x="50" y="356" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#53647a">No ACK in this example.</text>
+<text x="50" y="432" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Expiration is handled when the monitor scans, so redelivery may occur after the deadline.</text></svg>

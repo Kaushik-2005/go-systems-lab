@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">hash routing</title><desc id="desc">FNV-1a modulo the ordered shard count selects a bucket. Put and Get route independently to that bucket.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Hash sharding: placement and storage are separate</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Illustrative hash output = 7  |  ordered shards = [A, B, C]</text>
+<rect x="50" y="140" width="180" height="72" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Key</text>
+<path d="M 240 176 L 280 176" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="290" y="140" width="180" height="72" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="306" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">FNV-1a hash</text>
+<path d="M 480 176 L 520 176" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="530" y="140" width="180" height="72" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="546" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">7 % 3 = 1</text>
+<path d="M 720 176 L 760 176" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="770" y="140" width="180" height="72" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="786" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Shard B</text>
+<rect x="50" y="270" width="420" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="303" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Put(key, value)</text>
+<text x="68" y="330" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Route key -&gt; write B's in-memory map</text>
+<rect x="530" y="270" width="420" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="546" y="303" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Get(key)</text>
+<text x="548" y="330" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Route key -&gt; read B's in-memory map</text>
+<text x="50" y="432" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The same key selects the same shard while membership and ordering stay unchanged.</text></svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="450" viewBox="0 0 1000 450" role="img" aria-labelledby="title desc"><title id="title">local node cache</title><desc id="desc">A two-entry cache promotes reads and evicts the tail on insertion. Positive TTL entries expire lazily.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="450" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Cache node: local LRU eviction and lazy TTL expiration</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Capacity = 2; each node owns its map, linked list, and mutex.</text>
+<rect x="50" y="140" width="270" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Set A, then Set B</text>
+<text x="68" y="212" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">Head [B] &lt;-&gt; [A] Tail</text>
+<rect x="365" y="140" width="270" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="381" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Get A</text>
+<text x="383" y="212" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#166534">Head [A] &lt;-&gt; [B] Tail</text>
+<rect x="680" y="140" width="270" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="696" y="173" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Set C; evict B</text>
+<text x="698" y="212" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">Head [C] &lt;-&gt; [A] Tail</text>
+<path d="M 330 195 L 355 195" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 645 195 L 670 195" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="50" y="310" width="900" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="343" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Positive TTL: remove an expired key on Get or Entries. TTL &lt;= 0: no expiration</text>
+<text x="50" y="442" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Expiration is local. This node has no background cleanup goroutine.</text></svg>

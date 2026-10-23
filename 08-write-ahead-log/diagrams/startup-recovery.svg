@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" role="img" aria-labelledby="title desc"><title id="title">startup recovery</title><desc id="desc">Startup validates complete records, rejects corrupt complete lines, and truncates the final unterminated fragment.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="470" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">WAL recovery: validate complete lines, discard the tail</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">A newline marks a complete record. Startup scans the local file, not application state.</text>
+<rect x="50" y="125" width="400" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="66" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Complete JSON + valid checksum</text>
+<path d="M 460 157 L 535 157" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="545" y="125" width="405" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="561" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Accept; track highest sequence</text>
+<rect x="50" y="225" width="400" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="66" y="258" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Complete line: bad JSON / checksum</text>
+<path d="M 460 257 L 535 257" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="545" y="225" width="405" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="561" y="258" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Open returns an error</text>
+<rect x="50" y="325" width="400" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="358" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Final bytes without a newline</text>
+<path d="M 460 357 L 535 357" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="545" y="325" width="405" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="561" y="358" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Truncate tail; reopen for appends</text>
+<text x="50" y="448" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">After valid sequences 0, 1, 2, the next Append allocates sequence 3.</text></svg>

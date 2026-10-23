@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="505" viewBox="0 0 1000 505" role="img" aria-labelledby="title desc"><title id="title">fencing tokens</title><desc id="desc">A stale owner with token forty-one cannot change B's token-forty-two lock. A protected resource must separately enforce fencing for its own writes.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="505" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Fencing: a newer token identifies a newer owner</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The lock boundary is implemented; downstream resource enforcement is a separate responsibility.</text>
+<rect x="50" y="130" width="400" height="95" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="163" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">A pauses while holding token 41</text>
+<text x="68" y="193" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Its lease expires while it is paused.</text>
+<path d="M 460 177 L 535 177" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="545" y="130" width="405" height="95" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="561" y="163" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">B acquires token 42</text>
+<text x="563" y="193" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">B is now the current lock owner.</text>
+<rect x="50" y="270" width="900" height="65" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="66" y="303" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">At the lock: A renews or releases with 41 -&gt; reject; B with 42 -&gt; validate</text>
+<rect x="50" y="360" width="900" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="393" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">At a protected resource: remember newest accepted token; reject older tokens</text>
+<text x="50" y="482" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Tokens increase within one server lifetime. Restart loses both ownership and token history.</text></svg>
