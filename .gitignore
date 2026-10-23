@@ -5,6 +5,9 @@ bin/
 *.test
 *.out
 
+# Editable diagram sources
+*.excalidraw
+
 # Root documentation: keep only README.md
 /*.md
 !/README.md

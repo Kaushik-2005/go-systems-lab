@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="440" viewBox="0 0 1000 440" role="img" aria-labelledby="title desc"><title id="title">health checks</title><desc id="desc">Successful probes make a backend eligible; errors and non-200 responses exclude it until recovery.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker><marker id="back" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto"><path d="M 8 0 L 0 4 L 8 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="440" fill="#fff"/><text x="36" y="50" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#243247">Health checks: remove failed backends, then restore them</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Checks run immediately and every 2 seconds; each backend is probed concurrently.</text>
+<rect x="50" y="150" width="220" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="184" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">GET /health</text>
+<rect x="390" y="115" width="245" height="64" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="406" y="149" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">HTTP 200</text>
+<rect x="390" y="255" width="245" height="64" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="406" y="289" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Error or non-200</text>
+<path d="M 276 173 L 380 147" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 276 194 L 380 287" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="755" y="115" width="195" height="64" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="771" y="149" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Mark healthy</text>
+<rect x="755" y="255" width="195" height="64" rx="8" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+<text x="771" y="289" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#b91c1c">Mark unhealthy</text>
+<path d="M 641 147 L 745 147" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 641 287 L 745 287" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="50" y="373" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Healthy: eligible for new requests. Unhealthy: skipped until a later probe succeeds.</text>
+<text x="50" y="408" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Each probe has a 2-second client timeout. Health is a point-in-time observation.</text></svg>

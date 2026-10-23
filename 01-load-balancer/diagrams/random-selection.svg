@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="380" viewBox="0 0 1000 380" role="img" aria-labelledby="title desc">
+  <title id="title">Random selection samples the healthy backend list</title>
+  <desc id="desc">Each request draws an index from zero through two. An illustrative sequence of indices 1, 1, 0, 2, 0, 2 routes to B, B, A, C, A, C. Every draw gives each backend a one-third chance.</desc>
+  <rect width="1000" height="380" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#243247">
+    <text x="36" y="50" font-size="28">Random: draw a fresh backend for every request</text>
+    <text x="36" y="88" font-size="18" fill="#53647a">Healthy list = [A, B, C]. Each backend has a 1/3 chance on each draw.</text>
+    <g font-size="18" text-anchor="middle">
+      <text x="110" y="145">Request 1</text><text x="266" y="145">Request 2</text><text x="422" y="145">Request 3</text>
+      <text x="578" y="145">Request 4</text><text x="734" y="145">Request 5</text><text x="890" y="145">Request 6</text>
+    </g>
+    <g stroke="#2563eb" stroke-width="2" fill="#eff6ff">
+      <rect x="50" y="165" width="120" height="65" rx="8"/><rect x="206" y="165" width="120" height="65" rx="8"/><rect x="362" y="165" width="120" height="65" rx="8"/>
+      <rect x="518" y="165" width="120" height="65" rx="8"/><rect x="674" y="165" width="120" height="65" rx="8"/><rect x="830" y="165" width="120" height="65" rx="8"/>
+    </g>
+    <g font-size="24" text-anchor="middle" fill="#2563eb">
+      <text x="110" y="206">B</text><text x="266" y="206">B</text><text x="422" y="206">A</text>
+      <text x="578" y="206">C</text><text x="734" y="206">A</text><text x="890" y="206">C</text>
+    </g>
+    <g font-size="16" text-anchor="middle" fill="#53647a">
+      <text x="110" y="264">draw = 1</text><text x="266" y="264">draw = 1</text><text x="422" y="264">draw = 0</text>
+      <text x="578" y="264">draw = 2</text><text x="734" y="264">draw = 0</text><text x="890" y="264">draw = 2</text>
+    </g>
+    <text x="50" y="325" font-size="20">Illustrative outcome: consecutive requests can select the same backend.</text>
+    <text x="50" y="357" font-size="18" fill="#53647a">Traffic balances statistically over many requests; no short sequence is guaranteed to be even.</text>
+  </g>
+</svg>

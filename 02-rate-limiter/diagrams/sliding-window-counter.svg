@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" role="img" aria-labelledby="title desc"><title id="title">sliding window counter</title><desc id="desc">The rolling interval from 2.5 to 12.5 seconds overlaps 75 percent of the previous window and the elapsed part of the current window. The weighted count is eight.</desc><rect width="1000" height="470" fill="#ffffff"/><text x="36" y="50" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#243247">Sliding-window counter: weight the previous window</text>
+<text x="36" y="83" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">One key  |  window = 10 seconds  |  now = 12.5s</text>
+<rect x="60" y="120" width="440" height="115" fill="#e2e8f0" stroke="#53647a" stroke-width="2"/>
+<rect x="170" y="120" width="330" height="115" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<rect x="500" y="120" width="440" height="115" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="75" y="152" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">Previous window: 8 requests</text>
+<text x="520" y="152" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">Current window: 2 requests</text>
+<line x1="60" y1="225" x2="940" y2="225" stroke="#53647a" stroke-width="2"/>
+<line x1="610" y1="114" x2="610" y2="272" stroke="#2563eb" stroke-width="2"/>
+<text x="60" y="260" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#243247">0s</text>
+<text x="155" y="260" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#243247">2.5s</text>
+<text x="482" y="260" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#243247">10s</text>
+<text x="590" y="296" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#2563eb">12.5s: now</text>
+<text x="900" y="260" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#243247">20s</text>
+<text x="183" y="196" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#2563eb">75% overlap</text>
+<text x="517" y="196" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#166534">25% elapsed</text>
+<rect x="60" y="320" width="880" height="82" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="80" y="352" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#2563eb">Estimated rolling count = 8 x 0.75 + 2 = 8</text>
+<text x="80" y="383" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#243247">Limit 8: reject. Limit 10: allow, then increment the current count to 3.</text>
+<text x="60" y="438" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The shaded overlap estimates traffic; individual request times are not stored.</text></svg>

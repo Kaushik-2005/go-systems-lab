@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="440" viewBox="0 0 1000 440" role="img" aria-labelledby="title desc">
+  <title id="title">Least connections chooses the fewest active requests</title>
+  <desc id="desc">With four requests on A, one on B, and three on C, select B. Starting the new request increases B to two; completing it decreases B to one. Ties favor the first backend.</desc>
+  <rect width="1000" height="440" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#243247">
+    <text x="36" y="50" font-size="28">Least connections: choose the smallest active count</text>
+    <text x="36" y="88" font-size="18" fill="#53647a">This implementation counts active proxied requests, rather than open TCP connections.</text>
+    <g stroke-width="2">
+      <rect x="50" y="125" width="270" height="140" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+      <rect x="365" y="125" width="270" height="140" rx="8" fill="#dcfce7" stroke="#166534"/>
+      <rect x="680" y="125" width="270" height="140" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+    </g>
+    <g font-size="22" text-anchor="middle"><text x="185" y="164">Backend A</text><text x="500" y="164">Backend B: selected</text><text x="815" y="164">Backend C</text></g>
+    <g font-size="30" text-anchor="middle"><text x="185" y="217">4 active</text><text x="500" y="217" fill="#166534">1 active</text><text x="815" y="217">3 active</text></g>
+    <text x="50" y="309" font-size="20">New request starts on B: 1 -&gt; 2 active. When it finishes: 2 -&gt; 1 active.</text>
+    <text x="50" y="346" font-size="18">The next selection scans the current counters again. Equal counts favor the first backend.</text>
+    <text x="50" y="385" font-size="18" fill="#53647a">Selection and increment are separate: concurrent requests can choose the same backend</text>
+    <text x="50" y="412" font-size="18" fill="#53647a">before either starts. Active request count is a load estimate, not a reservation.</text>
+  </g>
+</svg>

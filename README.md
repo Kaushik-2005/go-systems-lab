@@ -27,7 +27,7 @@ An HTTP reverse proxy that distributes requests across backend servers.
 - request timeouts and backend failure handling;
 - graceful shutdown.
 
-Design: [01-load-balancer/design.md](01-load-balancer/design.md)
+Design and diagrams: [Load Balancer README](01-load-balancer/README.md#how-it-works)
 
 ### 2. [Rate Limiter](02-rate-limiter/README.md)
 
@@ -38,7 +38,7 @@ Request-admission algorithms that decide whether a keyed request is accepted.
 - sliding-window counter;
 - token bucket.
 
-Design: [02-rate-limiter/design.md](02-rate-limiter/design.md)
+Design and diagrams: [Rate Limiter README](02-rate-limiter/README.md#the-four-algorithms)
 
 ### 3. [LRU Cache](03-lru-cache/README.md)
 
@@ -50,7 +50,7 @@ An in-memory cache using a map and custom doubly linked list.
 - concurrency-safe access;
 - background cleanup.
 
-Design: [03-lru-cache/design.md](03-lru-cache/design.md)
+Design and diagrams: [LRU Cache README](03-lru-cache/README.md#how-it-works)
 
 ### 4. [Consistent Hashing](04-consistent-hashing/README.md)
 
@@ -239,7 +239,7 @@ find a failure or trade-off
 add the concept that addresses it
 ```
 
-Every component has runnable Go code, a practical README, and a design document explaining its data structures, algorithms, concurrency, and failure behavior.
+Every component has runnable Go code and a practical README. Design explanations cover data structures, algorithms, concurrency, and failure behavior in the README or a separate design document.
 
 ## Language and dependencies
 

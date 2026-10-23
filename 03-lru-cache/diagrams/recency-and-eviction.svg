@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="490" viewBox="0 0 1000 490" role="img" aria-labelledby="title desc"><title id="title">recency and eviction</title><desc id="desc">A map points to linked-list entries. Reading A moves it to the head; inserting D at capacity evicts B from the tail.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker><marker id="back" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto"><path d="M 8 0 L 0 4 L 8 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="490" fill="#fff"/><text x="36" y="50" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#243247">LRU: the map finds entries; the list remembers recency</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Capacity = 3 entries  |  left = most recently used  |  right = least recently used</text>
+<rect x="50" y="120" width="180" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="66" y="154" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Map: A, B, C</text>
+<path d="M 235 152 L 343 152" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="245" y="134" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#53647a">lookup</text>
+<rect x="355" y="120" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="371" y="154" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">C</text>
+<rect x="535" y="120" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="551" y="154" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">B</text>
+<rect x="715" y="120" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="731" y="154" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">A</text>
+<path d="M 473 152 L 525 152" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<path d="M 653 152 L 705 152" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<text x="855" y="158" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Before</text>
+<text x="50" y="256" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#2563eb">Get(A)</text>
+<rect x="355" y="220" width="110" height="65" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<text x="371" y="254" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">A</text>
+<rect x="535" y="220" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="551" y="254" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">C</text>
+<rect x="715" y="220" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="731" y="254" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">B</text>
+<path d="M 473 252 L 525 252" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<path d="M 653 252 L 705 252" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<text x="50" y="289" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#53647a">A moves to the head.</text>
+<text x="50" y="361" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#2563eb">Set(D)</text>
+<rect x="355" y="325" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="371" y="359" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">D</text>
+<rect x="535" y="325" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="551" y="359" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">A</text>
+<rect x="715" y="325" width="110" height="65" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="731" y="359" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">C</text>
+<path d="M 473 357 L 525 357" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<path d="M 653 357 L 705 357" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#back)"/>
+<text x="50" y="395" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#b91c1c">Insert D; evict tail B.</text>
+<text x="50" y="454" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">Map and list change together: insert D into both, remove B from both.</text></svg>
