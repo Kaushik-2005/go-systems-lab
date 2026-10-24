@@ -2,19 +2,21 @@
 
 ## What it is
 
-Let's say one publisher sends an event and multiple independent subscribers need to receive it. A pub/sub broker sends a copy of the event to every subscriber of a topic.
+A publish/subscribe (pub/sub) broker sends each event to the subscribers of a topic. Each subscriber receives a separate copy. Subscribers do not share one work queue.
 
 ## How it works
 
-The broker maps each topic to its subscription IDs. Every subscription owns a private buffered channel. Unlike a queue, where consumers share work, pub/sub sends each current subscriber its own event copy.
+The broker maps topics to subscription IDs. Each subscription has its own buffered channel. The channel holds events until the consumer reads them.
 
 ### Subscribe and fan out
 
-![Publishing event E1 to news places a separate copy in subscriber A and subscriber B buffers](diagrams/topic-fanout.svg)
+![Event E1 enters the separate buffers for subscribers A and B.](diagrams/topic-fanout.svg)
 
-`Subscribe(topic, buffer)` creates a unique subscription ID, allocates its channel, and adds it to the topic. Buffer sizes below one are raised to one. Consumers read from the receive-only channel returned by `Messages()`.
+`Subscribe(topic, buffer)` creates an ID and channel. It adds the subscription to the topic. If the buffer size is less than one, the broker uses one. Consumers read the receive-only channel from `Messages()`.
 
-`Publish(topic, event)` snapshots the current subscribers under the broker's read lock, releases that lock, then visits each subscription and sends the event. Reading E1 from subscriber A does not remove it from B. Publishing to an empty topic delivers zero copies, and subscribers joining later receive no replay.
+`Publish(topic, event)` copies the current subscriber list under the broker's read lock. It releases that lock before it sends events. It then visits each subscription and sends a copy.
+
+A read from A does not remove the copy in B. An empty topic receives no deliveries. A subscriber that joins later does not receive previous events.
 
 ```go
 news := broker.New()
@@ -25,38 +27,44 @@ event := <-reader.Messages()
 
 ### Slow-subscriber policies
 
-![Blocking Publish waits for a full channel to drain; PublishNonBlocking skips it and counts a dropped event](diagrams/slow-subscriber-policies.svg)
+![Publish waits for buffer space. PublishNonBlocking skips a full buffer.](diagrams/slow-subscriber-policies.svg)
 
-With capacity one, publishing E1 fills an unread subscriber's channel. When E2 arrives, the policy determines what happens:
+For a one-event buffer, E1 fills the channel until a consumer reads it. If E2 arrives first, the method determines the result:
 
-| Method | Full subscriber buffer | Result |
+| Method | Full buffer | Result |
 | --- | --- | --- |
-| `Publish` | Waits until space is available | Returns the number of successful sends |
-| `PublishNonBlocking` | Skips that subscriber | Returns delivered and dropped counts |
+| `Publish` | Wait for space | Return the successful delivery count |
+| `PublishNonBlocking` | Skip this subscription | Return delivered and dropped counts |
 
-Blocking publication preserves the send to an open subscription but lets a slow reader delay the publisher. Since subscribers are visited sequentially, it also delays subscribers visited later. Map iteration does not guarantee which subscriber is visited first.
+`Publish` waits to send to an open subscription. A slow consumer delays the publisher. It also delays later subscriptions in the same loop. The map does not specify subscription order.
 
-Nonblocking publication uses a channel `select` with a `default` branch, so a full channel does not stall that send. The skipped event is lost for that subscriber. A subscription closed since the snapshot is also counted as a dropped delivery. Both methods still acquire subscription mutexes; nonblocking refers to channel-capacity handling.
+`PublishNonBlocking` uses a channel `select` with a `default` branch. If the buffer is full, it skips the event for that subscription. It also counts a subscription closed after the list copy as a dropped delivery.
+
+Both methods acquire subscription mutexes. Thus, nonblocking describes the buffer-capacity decision. It does not mean that mutex operations cannot wait.
 
 ### Unsubscribe and channel ownership
 
-![Unsubscribe removes membership before closing the channel; a blocked publish can delay closure until the reader frees buffer space](diagrams/unsubscribe-and-channel-ownership.svg)
+![Unsubscribe removes membership before closure. A blocked send can delay channel closure.](diagrams/unsubscribe-and-channel-ownership.svg)
 
-The broker owns channel creation, sends, and closure. Consumers receive through `Messages()`, which returns a receive-only channel; they do not close it. Closing a channel signals that no more events will be sent, but does not discard events already in its buffer.
+The broker creates, sends to, and closes the channel. Consumers only read the receive-only channel from `Messages()`. Closure stops future sends but keeps events already in the buffer.
 
-`Unsubscribe(subscription)` first removes membership under the broker lock, removing an empty topic if necessary. It then closes the subscription's channel under the subscription mutex. Calling unsubscribe again returns `false`. Already-buffered events remain available to drain after closure.
+`Unsubscribe(subscription)` removes membership under the broker lock. If the topic has no subscriptions, it removes the topic too. It then acquires the subscription mutex and closes the channel. A repeated unsubscribe call returns `false`.
 
-The subscription mutex prevents sending on a closed channel. A blocking send holds this mutex while waiting for buffer space, so unsubscribe cannot cancel that send: it waits for the send to finish before closing the channel. A publisher that already took its subscriber snapshot can race with unsubscribe; removal does not instantly cancel that publication.
+The subscription mutex prevents a send on a closed channel. A blocking send holds that mutex until the send finishes. Unsubscribe must wait for the mutex. It cannot cancel that send. A publisher with an earlier copy of the subscriber list can still attempt delivery during unsubscribe.
 
-In the illustrated case, E1 fills a one-event buffer and a publisher blocks sending E2. Unsubscribe removes membership, then waits for the publisher's subscription lock. Reading E1 frees space for E2; the publisher finishes and releases the lock, allowing unsubscribe to close the channel. The reader can still receive E2, followed by `ok == false` once the closed channel is empty. A `for event := range subscription.Messages()` loop drains those buffered events and then ends.
+In the diagram, E1 fills a one-event buffer. The publisher holds the subscription mutex while it waits to send E2. Unsubscribe removes membership, then waits for that mutex.
+
+The consumer reads E1 and frees space. The publisher sends E2 and releases the mutex. Unsubscribe can then close the channel. The consumer can read E2 after closure. The next read from the empty channel returns `ok == false`.
+
+A `for event := range subscription.Messages()` loop reads buffered events until the closed channel is empty. The loop then ends. If the consumer never frees space, the blocked publisher and unsubscribe call can continue to wait.
 
 ## Concurrency, cost, and limits
 
-The broker's `sync.RWMutex` protects topic membership, and each subscription's mutex protects delivery and closure. Releasing the broker lock before sending lets unrelated topics continue to subscribe and unsubscribe even when one channel is full.
+The broker's `sync.RWMutex` protects topic membership. Each subscription mutex protects sends and closure. The broker releases its lock before sends. Thus, a full channel does not hold the membership lock for other topics.
 
-Fan-out visits s subscribers in O(s) work, excluding time waiting for locks or channel capacity. Concurrent publishers can interleave differently for different subscribers; there is no single global order across publishers.
+Fan-out visits s subscribers in O(s) work, plus time for locks and buffer space. Concurrent publishers can give different subscribers different event orders. There is no global order across publishers.
 
-This is an in-memory, single-process broker. It does not provide persistence, replay for late subscribers, acknowledgements, retries, or durable delivery.
+The broker keeps all state in one process. It does not provide persistence, historical replay, acknowledgments, retries, or durable delivery.
 
 ## Project structure
 
@@ -70,11 +78,12 @@ go.mod
 
 ## Run it
 
-Run from the `06-pub-sub-broker` directory:
+Open a terminal in the `06-pub-sub-broker` directory.
+Run these commands:
 
 ```powershell
 go run ./cmd/demo
 go run ./cmd/concurrent
 ```
 
-The demos show that the first subscribers all receive the same events, unsubscribed subscribers receive nothing new, and concurrent publishers still fan out events to every subscriber.
+The demonstrations show event copies, unsubscribe, and concurrent publication. They also show how a full buffer causes a nonblocking send to skip an event.

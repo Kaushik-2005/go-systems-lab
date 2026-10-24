@@ -2,48 +2,35 @@
 
 ## What it is
 
-Let's say reading from a database is slow but the same data is requested often. A cache keeps recently used values in memory so the next read is faster.
-
-```text
-request -> cache -> hit: return value
-              -> miss: load and store value
-```
+A cache keeps values in memory for repeated access. This cache has a fixed entry capacity. When it exceeds that capacity, it removes the least recently used (LRU) entry.
 
 ## How it works
 
-The cache stores entries in most-recently-used to least-recently-used order.
-
-When the cache is full, it removes the least recently used entry. A map provides fast key lookup and a custom doubly linked list keeps the usage order.
-
-It also handles:
-
-- `Get`, `Set`, and `Delete`;
-- fixed capacity;
-- TTL expiration;
-- background cleanup;
-- concurrent access.
+A map finds entries by key. A custom doubly linked list records the order of recent use. The cache also supports a time to live (TTL), explicit deletion, and background expiration checks.
 
 ### Map, list, and eviction
 
-![A map finds list entries; Get moves A to the head and inserting D evicts the least recently used entry B](diagrams/recency-and-eviction.svg)
+![A read moves A to the list head. A later insertion removes B from the tail.](diagrams/recency-and-eviction.svg)
 
-The map points directly to list entries. The head is most recently used and the tail is least recently used. A map lookup finds an entry in O(1), and its `prev` and `next` pointers allow O(1) movement or removal.
+The map points to list entries. The head contains the most recently used entry. The tail contains the least recently used entry. A map lookup takes O(1) time on average. The `prev` and `next` pointers permit O(1) movement and removal.
 
-`Set` creates or updates an entry and moves it to the head. `Get` also moves a valid entry to the head. If insertion exceeds capacity, the tail is removed from both the list and map. `Delete` removes the requested entry from both structures.
+`Set` inserts or changes an entry at the head. `Get` also moves a valid entry to the head. If insertion exceeds capacity, the cache removes the tail from the list and map. `Delete` removes the specified entry from both structures.
 
-The linked list is written directly instead of using `container/list` so the LRU mechanism stays visible.
+The implementation uses a custom list instead of `container/list`. This makes the list operations visible in the source code.
 
 ### TTL expiration and cleanup
 
-![A five-second TTL allows reads before expiration and removes expired entries on reads or during cleanup](diagrams/ttl-and-cleanup.svg)
+![Reads before expiration return the value. Reads or cleanup remove expired entries.](diagrams/ttl-and-cleanup.svg)
 
-`SetWithTTL` stores an expiration time. `Get` removes an expired entry lazily and returns a miss. `CleanupExpired` scans all entries so expired data can also be removed when nobody reads its key. `StartCleanup` runs those scans on a ticker and stops when its context is canceled. Plain `Set` stores a value without an expiration time.
+`SetWithTTL` stores an expiration time. If `Get` finds an expired entry, it removes the entry and returns a cache miss. `CleanupExpired` checks all entries and removes expired entries. Thus, it can remove expired entries that no client reads.
 
-`Len` and `Keys` can include expired entries until a read or cleanup removes them. `Keys` returns entries from most recently used to least recently used.
+`StartCleanup` repeats this check on a ticker. It stops when its context is canceled. Plain `Set` stores a value without an expiration time.
+
+`Len` and `Keys` can include expired entries until a read or cleanup removes them. `Keys` returns keys in order from most recent use to least recent use.
 
 ## Concurrency and cost
 
-One mutex protects the map, list links, values, TTL state, and size. This keeps related updates together and avoids a map/list mismatch during concurrent operations. `Get` takes the same exclusive lock as writes because it updates recency and can remove an expired entry.
+One mutex protects the map, list links, values, expiration times, and entry count. The mutex keeps related changes together. `Get` uses an exclusive lock because it changes list order and can remove expired entries.
 
 | Operation | Time complexity |
 | --- | --- |
@@ -61,10 +48,11 @@ go.mod
 
 ## Run it
 
-Run from the `03-lru-cache` directory:
+Open a terminal in the `03-lru-cache` directory.
+Run this command:
 
 ```powershell
 go run ./cmd/basic
 ```
 
-The demo shows a read changing recency order, an old entry being evicted, TTL expiration, concurrent access, and background cleanup.
+The demonstration shows recency changes, eviction, TTL expiration, concurrent access, and background cleanup.

@@ -2,46 +2,48 @@
 
 ## What it is
 
-Services can move between machines and ports. A service registry lets clients look up current instance addresses by a stable service name instead of hardcoding one address.
+A service registry stores instance addresses under a service name. Clients use that name to find an address. They do not need one fixed machine or port.
 
 ## How it works
 
 ### Registration and lookup
 
-![Instances register with a registry; clients look up addresses and then connect directly to an instance](diagrams/registration-and-lookup.svg)
+![An instance registers its address. A client reads that address and connects directly to the instance.](diagrams/registration-and-lookup.svg)
 
-The registry stores `service name -> instance ID -> registration`. Each registration contains an address and expiration time. `Register` creates or replaces the entry for that service and instance ID, with `expiresAt = now + TTL`. Multiple instances can share a service name.
+The registry maps each service name to instance registrations. Each registration has an instance ID, address, and expiration time. `Register` creates or replaces the entry for that service and ID. It sets `expiresAt = now + TTL`. TTL means time to live.
 
-`Lookup(service)` removes expired registrations, then returns the remaining instances for that service. Results come from a map, so their order is unspecified. The client chooses an address and connects directly: the registry does not proxy application traffic or load-balance the returned list.
+Multiple instances can use the same service name. `Lookup(service)` removes expired registrations before it returns the remaining instances. The result order is unspecified because the registry uses a map.
+
+The client selects an address and connects directly to it. The registry does not forward application traffic. It does not distribute requests across the returned addresses.
 
 ### Heartbeats and expiration
 
-![A heartbeat extends the expiration time; a later lookup or cleanup removes an instance whose lease has expired](diagrams/heartbeat-and-expiration.svg)
+![A heartbeat extends a lease. A later expiration check removes the instance.](diagrams/heartbeat-and-expiration.svg)
 
-`Heartbeat(service, id, TTL)` renews a known, unexpired entry by setting a new expiration relative to the current time. A missing or expired entry returns `false`; it must register again.
+`Heartbeat(service, id, TTL)` extends a known, unexpired registration. It sets expiration relative to the current time. If the entry is missing or expired, the function returns `false`. The instance must register again.
 
-`StartCleanup(ctx, interval)` scans all registrations periodically until the context is canceled. Lookup also runs expiration cleanup, so stale addresses are filtered even between background scans. `Deregister` removes an instance explicitly and removes its service map if empty.
+`StartCleanup(ctx, interval)` checks all registrations on a ticker. It stops when the context is canceled. Lookup also checks expiration between background checks. `Deregister` removes an instance explicitly. If the service has no instances, it removes the service map too.
 
-TTL represents recent contact with the registry, rather than an active health check of the application endpoint. An instance can fail immediately after a heartbeat or lookup, so a returned address can still be unreachable.
+A lease shows recent contact with the registry. It does not prove that the application endpoint works. An instance can fail immediately after a heartbeat or lookup. A returned address can therefore be unavailable.
 
 ### HTTP API
 
-The command listens on `:8080`, uses 30-second registration and heartbeat leases, and runs cleanup every 100 ms. It also seeds a `payments-1` registration at `localhost:9001`.
+The command listens on `:8080`. It uses 30-second registration and heartbeat leases. It checks expiration every 100 ms. It also creates a `payments-1` registration for `localhost:9001` at startup.
 
 | Request | Effect |
 | --- | --- |
-| `POST /register?service=...&id=...&address=...` | Register or replace an instance |
+| `POST /register?service=...&id=...&address=...` | Create or replace a registration |
 | `GET /lookup?service=...` | Return current instances |
-| `GET /heartbeat?service=...&id=...` | Renew an unexpired registration |
+| `GET /heartbeat?service=...&id=...` | Extend an unexpired registration |
 | `DELETE /deregister?service=...&id=...` | Remove an instance |
 
-The HTTP layer validates required query parameters and delegates to the registry package. Heartbeat returns `404` for a missing or expired instance; deregister returns `404` for a missing instance.
+The HTTP handlers check required query parameters. They call the registry package for state changes. Heartbeat returns `404` for a missing or expired instance. Deregister returns `404` for a missing instance.
 
 ## Concurrency, cost, and limits
 
-One mutex protects membership and expiration state. Lookup takes the write lock because it performs cleanup before reading. Register, heartbeat, and deregister are O(1) on average; cleanup and lookup scan all registrations for expiration, so that work grows with the total instance count.
+One mutex protects membership and expiration state. Lookup uses the write lock because it removes expired entries. Register, heartbeat, and deregister take O(1) time on average. Cleanup and lookup check all registrations for expiration. Their cost increases with the total instance count.
 
-State is local and in memory. Restart loses registrations, and multiple registry servers do not share state or run consensus. The registry package is independent of HTTP.
+All registrations exist in one process. A restart loses them. Different registry processes do not share state or use consensus. The registry package does not depend on HTTP.
 
 ## Project structure
 
@@ -55,7 +57,8 @@ go.mod
 
 ## Run it
 
-Run from the `10-service-discovery` directory:
+Open a terminal in the `10-service-discovery` directory.
+Run this command:
 
 ```powershell
 go run .\cmd\server\main.go
@@ -67,7 +70,7 @@ Register an instance:
 Invoke-RestMethod -Method Post -Uri "http://localhost:8080/register?service=payments&id=payments-2&address=localhost:9002"
 ```
 
-Look it up:
+Read the registered instances:
 
 ```powershell
 Invoke-RestMethod "http://localhost:8080/lookup?service=payments"

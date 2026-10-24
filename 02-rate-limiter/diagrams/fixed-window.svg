@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="440" viewBox="0 0 1000 440" role="img" aria-labelledby="title desc"><title id="title">fixed window</title><desc id="desc">Two adjacent ten-second windows each allow three requests. Five accepted requests cluster around the reset boundary.</desc><rect width="1000" height="440" fill="#ffffff"/><text x="36" y="50" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#243247">Fixed window: the counter resets at the boundary</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="440" viewBox="0 0 1000 440" role="img" aria-labelledby="title desc"><title id="title">fixed window</title><desc id="desc">Requests can use both allowances near a window boundary.</desc><rect width="1000" height="440" fill="#ffffff"/><text x="36" y="50" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#243247">Fixed window: the counter resets at the boundary</text>
 <text x="36" y="83" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">One key  |  limit = 3 requests  |  window = 10 seconds</text>
 <rect x="60" y="120" width="440" height="145" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
 <rect x="500" y="120" width="440" height="145" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
@@ -22,4 +22,4 @@
 <line x1="500" y1="115" x2="500" y2="280" stroke="#2563eb" stroke-width="2"/>
 <text x="380" y="298" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563eb">Count resets: 3 -&gt; 0</text>
 <text x="60" y="345" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#243247">Three accepted requests per window, but a burst can straddle the boundary.</text>
-<text x="60" y="380" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Here, five requests pass between 8.4s and 12s. The request at 13s is rejected.</text></svg>
+<text x="60" y="380" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Five requests pass between 8.4s and 12s. The limiter rejects the request at 13s.</text></svg>

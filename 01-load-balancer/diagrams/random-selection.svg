@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="380" viewBox="0 0 1000 380" role="img" aria-labelledby="title desc">
   <title id="title">Random selection samples the healthy backend list</title>
-  <desc id="desc">Each request draws an index from zero through two. An illustrative sequence of indices 1, 1, 0, 2, 0, 2 routes to B, B, A, C, A, C. Every draw gives each backend a one-third chance.</desc>
+  <desc id="desc">Random selection can send consecutive requests to the same backend.</desc>
   <rect width="1000" height="380" fill="#fff"/>
   <g font-family="Arial, Helvetica, sans-serif" fill="#243247">
     <text x="36" y="50" font-size="28">Random: draw a fresh backend for every request</text>
@@ -22,6 +22,6 @@
       <text x="578" y="264">draw = 2</text><text x="734" y="264">draw = 0</text><text x="890" y="264">draw = 2</text>
     </g>
     <text x="50" y="325" font-size="20">Illustrative outcome: consecutive requests can select the same backend.</text>
-    <text x="50" y="357" font-size="18" fill="#53647a">Traffic balances statistically over many requests; no short sequence is guaranteed to be even.</text>
+    <text x="50" y="357" font-size="18" fill="#53647a">Many requests usually give a more equal distribution. A short series can favor one backend.</text>
   </g>
 </svg>

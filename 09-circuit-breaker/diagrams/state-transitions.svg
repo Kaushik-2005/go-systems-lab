@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="490" viewBox="0 0 1000 490" role="img" aria-labelledby="title desc"><title id="title">state transitions</title><desc id="desc">Closed calls reach the dependency until the failure threshold opens the breaker. After a timeout a recovery probe closes on success or opens on failure.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="490" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Circuit breaker: stop calls, then test recovery</text>
-<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Sequential state flow; an operation runs outside the breaker mutex.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="490" viewBox="0 0 1000 490" role="img" aria-labelledby="title desc"><title id="title">state transitions</title><desc id="desc">Failures open the circuit. A later recovery probe closes it on success or opens it again on failure.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="490" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Circuit breaker: stop calls, then test recovery</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Sequential state flow. An operation runs outside the breaker mutex.</text>
 <rect x="50" y="145" width="240" height="85" rx="8" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
 <text x="66" y="178" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">CLOSED</text>
 <text x="68" y="204" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#243247">Calls reach dependency</text>
@@ -17,4 +17,4 @@
 <text x="58" y="299" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#166534">Probe succeeds</text>
 <path d="M 635 380 L 910 240" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="790" y="367" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#b91c1c">Probe fails</text>
-<text x="50" y="467" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">Timeout is checked by the next Execute call; there is no background reset timer.</text></svg>
+<text x="50" y="467" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The next Execute call checks the timeout. No background timer changes the state.</text></svg>

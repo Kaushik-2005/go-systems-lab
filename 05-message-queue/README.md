@@ -2,51 +2,51 @@
 
 ## What it is
 
-Let's say a producer creates work faster than a consumer can process it. A message queue stores the work until a consumer is ready.
+A message queue stores work until a consumer can process it. Producers and consumers can operate at different rates.
 
 ## How it works
 
-The broker owns a pending FIFO, an in-flight map, and a dead-letter FIFO. Each message has an ID, body, and attempt count. Consumers compete for pending work: a delivery goes to one consumer at a time.
+The broker has a pending queue, an in-flight map, and a dead-letter queue. The queues use first in, first out (FIFO) order. Each message has an ID, body, and attempt count. Each delivery goes to one consumer at a time.
 
 ### FIFO delivery
 
-![Consuming M1 removes the oldest pending message and leaves M2 and M3 for later consumers](diagrams/fifo-delivery.svg)
+![A consumer removes M1 from the queue. M2 and M3 remain pending.](diagrams/fifo-delivery.svg)
 
-`Publish(body)` allocates an ID such as `message-1`, initializes the attempt count to zero, and enqueues the message. `Consume()` dequeues the oldest pending message. If none is available, it returns `false` immediately; it does not wait for a producer.
+`Publish(body)` creates a message ID and sets the attempt count to zero. It then adds the message to the pending tail. `Consume()` removes the oldest pending message. If the queue is empty, it returns `false` without a wait.
 
-For pending messages `[M1, M2, M3]`, the first consume takes M1 and the next takes M2. Concurrent consumers can finish in a different order. Concurrent publishers can also enqueue in a different order from ID allocation, so message IDs do not define FIFO order.
+For `[M1, M2, M3]`, consecutive calls remove M1 and M2. Concurrent consumers can finish in a different order. Concurrent producers can insert messages in a different order from ID allocation. Thus, message IDs do not specify FIFO order.
 
-The FIFO uses a mutex-protected slice. Enqueue appends to the tail; dequeue clears the first slot and advances the slice. Enqueue is amortized O(1), and dequeue is O(1).
+A mutex protects each queue's slice. Insertion adds a message at the tail. Removal clears the first slot and advances the slice. Insertion takes amortized O(1) time. Removal takes O(1) time.
 
 ### In-flight messages and acknowledgements
 
-![Messages move from pending to in-flight, then ACK removes them or expiration sends them to retry or dead-letter storage](diagrams/message-lifecycle.svg)
+![An acknowledgment removes a delivery. Expiration returns it to pending or moves it to the dead-letter queue.](diagrams/message-lifecycle.svg)
 
-On consume, the broker increments the message's attempt count and records `deadline = now + visibilityTimeout` in the in-flight map. The message is no longer pending, so another consumer cannot immediately take it.
+When a consumer receives a message, the broker increases its attempt count. It records `deadline = now + visibilityTimeout` in the in-flight map. The message is no longer pending. Another consumer cannot take it until the broker returns it to pending.
 
-After processing succeeds, the consumer calls `Ack(id)`. An ACK removes the in-flight entry and returns `true`; an ID not currently in flight returns `false`. The broker does not retain a permanent history of completed messages.
+After successful work, the consumer sends an acknowledgment (ACK) with `Ack(id)`. If the ID is in flight, the function removes it and returns `true`. Otherwise, it returns `false`. The broker does not keep a permanent record of completed messages.
 
 ### Visibility timeout, retries, and dead letters
 
-![With retryLimit two, the first timeout requeues M1 and the second unacknowledged delivery times out into the dead-letter queue](diagrams/visibility-and-retries.svg)
+![With retryLimit two, M1 has two delivery attempts before the dead-letter queue.](diagrams/visibility-and-retries.svg)
 
-`RequeueExpired()` removes deliveries whose deadlines have arrived. If `Attempts < retryLimit`, it appends the message to the pending tail. Otherwise it sends the message to the dead-letter queue. The message keeps its ID and body across deliveries.
+`RequeueExpired()` removes deliveries that reached their deadlines. If `Attempts < retryLimit`, it adds the message to the pending tail. Otherwise, it adds the message to the dead-letter queue. The ID and body stay the same.
 
-In this implementation, `retryLimit = 2` means two total delivery attempts: the initial delivery and one redelivery. If neither is acknowledged, the second expiration moves the message to dead-letter storage. `ConsumeDeadLetter()` lets the caller inspect and remove those messages.
+Here, `retryLimit = 2` permits two total attempts. This includes the first attempt and one repeated delivery. If neither attempt receives an ACK, the second expiration moves the message to the dead-letter queue. `ConsumeDeadLetter()` reads and removes a message from that queue.
 
-`StartVisibilityMonitor(ctx, interval)` runs expiration scans on a ticker until the context is canceled. Expiration is observed during a scan, so redelivery can occur later than the exact deadline. Without the monitor or explicit calls to `RequeueExpired`, expired messages stay in flight.
+`StartVisibilityMonitor(ctx, interval)` checks expiration on a ticker until the context is canceled. The check can occur after the exact deadline. Without this monitor or explicit `RequeueExpired` calls, expired messages stay in flight.
 
 ### Delivery guarantees
 
-Unacknowledged work can be delivered again. For example, a consumer may complete its side effect and crash before its ACK reaches the broker. Consumers should make processing idempotent when duplicates matter.
+A message without an ACK can return to a consumer. For example, a consumer can finish work and fail before its ACK reaches the broker. Use idempotent operations when repeated work can cause incorrect results. An idempotent operation gives the same result if the consumer repeats it.
 
-ACKs identify the message, rather than a specific delivery attempt. A delayed ACK from an earlier attempt can therefore remove a newer in-flight delivery of the same message. This is a simplified at-least-once model with bounded retries, rather than exactly-once processing.
+An ACK identifies a message, not a delivery attempt. A late ACK can remove a newer delivery of the same message. This model permits repeated delivery and limits the number of attempts. It does not provide exactly-once processing.
 
 ## Concurrency and limits
 
-The broker mutex protects IDs and the in-flight map. Each FIFO protects its own slice. Moving a message between queues and the in-flight map involves separate lock acquisitions; these steps are not one transaction, and length methods do not provide an atomic snapshot of all three states.
+The broker mutex protects IDs and the in-flight map. Each queue has a separate mutex. Transfers between queues and the map use separate lock operations. These transfers do not form one transaction. Length methods do not return one atomic view of all three states.
 
-An expiration scan is O(i) for i in-flight messages. Pending and dead-letter queues are unbounded. Everything is in memory in one process, so a restart loses all messages. There is no durable storage or transaction joining consumer work with the ACK.
+Expiration checks take O(i) time for i in-flight messages. The queues have no capacity limit. All state exists in one process. A restart loses all messages. The broker does not join consumer work and an ACK in one transaction.
 
 ## Project structure
 
@@ -63,7 +63,8 @@ go.mod
 
 ## Run it
 
-Run from the `05-message-queue` directory:
+Open a terminal in the `05-message-queue` directory.
+Run these commands:
 
 ```powershell
 go run ./cmd/fifo
@@ -71,4 +72,4 @@ go run ./cmd/ack
 go run ./cmd/concurrent
 ```
 
-The demos show FIFO order, acknowledgement state, redelivery after timeout, dead-letter handling, and concurrent processing.
+The demonstrations show FIFO order, ACKs, repeated delivery, dead-letter messages, and concurrent processing.

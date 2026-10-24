@@ -2,57 +2,54 @@
 
 ## What it is
 
-Let's say your application needs to store and retrieve data using a name. A key-value store maps a string key to a string value.
-
-```text
-key:   language
-value: Go
-```
+A key-value store associates a string key with a string value. This implementation keeps values in memory. An optional append-only log preserves mutations for recovery.
 
 ## How it works
 
-`New()` creates an in-memory store. `Open(path)` adds an append-only JSON log and replays it to recover previous values. Reads use the in-memory map in either mode.
+`New()` creates a memory-only store. `Open(path)` adds a JSON log and reads previous records to recover values. Both modes read values from the map.
 
 ### Writes and tombstones
 
-![Persistent mutations append and sync JSON before changing the map, while Get reads memory](diagrams/persistent-write-path.svg)
+![A persistent mutation writes and syncs its record before it changes the map.](diagrams/persistent-write-path.svg)
 
-For a persistent store, `Put(key, value)` marshals a record, appends a newline, writes it, and calls `file.Sync`. Only after that succeeds does it update the map. A write or sync error is returned before the in-memory mutation is applied.
+`Put(key, value)` encodes a JSON record and adds a newline. It writes the record and calls `file.Sync`. After success, it changes the map. If the write or sync fails, it returns an error before the map change.
 
-`Delete(key)` follows the same order, appending a tombstone before removing an existing key. A missing key returns `false` without writing a record. `Get(key)` reads only the map and reports whether the key exists.
+`Delete(key)` writes a delete record before it removes an existing key. This record is a tombstone. A missing key returns `false` without a record. `Get(key)` reads only the map and reports whether the key exists.
 
 ```json
 {"operation":"put","key":"language","value":"Go"}
 {"operation":"delete","key":"language"}
 ```
 
-Appending mutations avoids rewriting the full database on every update, but old values and tombstones accumulate until compaction. Map access is O(1) on average; persistent mutations also pay serialization, file-write, and sync costs.
+The log records each mutation without a full database rewrite. Old values and tombstones remain until compaction. Map access takes O(1) time on average. Persistent mutations also require encoding, file writes, and sync operations.
 
 ### Recovery by replay
 
-![Replaying puts for language and database followed by a language delete recovers only database](diagrams/log-recovery.svg)
+![Replay applies puts and deletes in order to rebuild the live map.](diagrams/log-recovery.svg)
 
-`Open(path)` creates or opens the file, scans its newline-delimited JSON records, and applies them in order to an empty map. A later put replaces an earlier value for the same key. A delete removes the key so an earlier put cannot resurrect it during replay.
+`Open(path)` creates or opens the log file. It reads newline-delimited JSON records and applies them in order to an empty map. A later put replaces an earlier value. A tombstone removes its key during replay.
 
-For `PUT language=Go`, `PUT database=systems`, then `DELETE language`, recovery leaves only `database=systems`. The recovered file remains open for future appends. Replay time grows with the log's size, including obsolete history.
+For `PUT language=Go`, `PUT database=systems`, then `DELETE language`, recovery leaves only `database=systems`. The file stays open for future writes. Replay time increases with the full log size, including obsolete records.
 
-Malformed JSON or a scanner error makes startup fail. This component does not repair a partial final record or verify record checksums; the separate write-ahead-log component explores those mechanisms.
+Invalid JSON or a scanner error causes startup to fail. This component does not repair a partial final record or check record checksums. The write-ahead-log component provides those mechanisms.
 
 ### Log compaction
 
-![Compaction replaces obsolete puts and tombstones with a single record for each surviving value](diagrams/log-compaction.svg)
+![Compaction keeps one put record for each live key.](diagrams/log-compaction.svg)
 
-`Compact()` snapshots the live values while holding the store's write lock, sorts the keys, and writes one put record per key to a temporary file in the same directory. It flushes the buffer, syncs and closes the temporary file, closes the old log, renames the temporary file over it, then reopens the log for appending.
+`Compact()` holds the write lock while it replaces the log. It sorts live keys and writes one put record per key to a temporary file. The temporary file is in the same directory as the log.
 
-If language was updated from Go to Rust and a temporary key was created then deleted, the compacted log needs only `PUT language=Rust`. Older puts and tombstones disappear, while replay produces the same live map. Compacting a map-only store does nothing.
+The function flushes the buffer and syncs the temporary file. It closes that file and the old log. It renames the temporary file over the old log. It then reopens the log for further writes.
 
-Sorting k live keys takes O(k log k), plus the cost of writing their values. Compaction reduces disk usage and future replay work, but blocks reads and mutations during the rewrite. It is a local file-replacement mechanism, rather than a transactional crash-recovery protocol.
+For example, the log can contain two language values and a deleted temporary key. Compaction keeps only the latest language value. Replay then gives the same live map. Compaction of a memory-only store has no effect.
+
+The sort takes O(k log k) time for k live keys. Compaction also requires time to write their values. It reduces file size and future replay work. It blocks reads and mutations during the rewrite. It does not provide a transactional crash-recovery protocol.
 
 ## Concurrency and limits
 
-One `sync.RWMutex` protects the map and file operations. Reads use `RLock`; mutations, compaction, and close take the write lock. This prevents an ordinary write from interleaving with log replacement. `Close()` syncs and closes an open file.
+One `sync.RWMutex` protects map and file operations. Reads use `RLock`. Mutations, compaction, and close use the write lock. The lock prevents a concurrent mutation during log replacement. `Close()` syncs and closes an open file.
 
-All live values must fit in memory. The store uses local files and one process; it does not provide replication, transactions, or cross-process coordination.
+All live values must fit in memory. The store uses one process and local files. It does not provide replication, transactions, or coordination between processes.
 
 ## Project structure
 
@@ -67,7 +64,8 @@ go.mod
 
 ## Run it
 
-Run from the `07-key-value-store` directory:
+Open a terminal in the `07-key-value-store` directory.
+Run these commands:
 
 ```powershell
 go run .\cmd\basic\main.go
@@ -75,4 +73,4 @@ go run .\cmd\concurrent\main.go
 go run .\cmd\persistent\main.go
 ```
 
-The persistent demo writes records, reopens the log, rebuilds the map, and compacts obsolete history.
+The persistent demonstration writes records, compacts the log, and closes the store. It then reopens the log to recover the live map.

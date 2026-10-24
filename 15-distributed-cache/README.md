@@ -2,51 +2,57 @@
 
 ## What it is
 
-This component composes local LRU caches with consistent-hash placement, replication, health-aware routing, and migration. Named nodes are in-memory objects inside one process, rather than independent network servers.
+This component combines local caches, consistent hashing, replication, and migration. Each named node is an object in one process. The nodes are not separate network servers.
 
 ## How it works
 
 ### Local cache nodes
 
-![A two-entry cache promotes reads, evicts the least recently used entry, and removes expired values lazily](diagrams/local-node-cache.svg)
+![Reads change local recency order. Insertion can remove the least recently used entry.](diagrams/local-node-cache.svg)
 
-Each `Node` has a key-to-entry map and a custom doubly linked list. The head is most recently used and the tail least recently used. `Set` inserts or updates an entry at the head and evicts the tail if capacity is exceeded. `Get` removes an expired entry or promotes a live one. `Delete` removes an entry from both structures.
+Each `Node` has a key map and a custom doubly linked list. The head contains the most recently used entry. The tail contains the least recently used entry. This order provides least recently used (LRU) eviction.
 
-A positive TTL sets an expiration time; zero or a negative TTL means no expiration. `Entries` scans the node, removes expired entries, and returns a key/value snapshot. `Len` can include expired entries until a read or scan removes them. There is no background expiration loop.
+`Set` inserts or changes an entry at the head. It removes the tail if entry count exceeds capacity. `Get` removes an expired entry or moves a valid entry to the head. `Delete` removes an entry from the map and list.
+
+A positive time to live (TTL) sets an expiration time. Zero or a negative TTL means no expiration. `Entries` removes expired entries and returns a key/value snapshot. `Len` can include expired entries until a read or scan removes them. The node has no background expiration loop.
 
 ### Placement, replicas, and health
 
-![Writes reach the current healthy replica set; a failed primary is skipped so reads use the next healthy owner](diagrams/replication-and-health.svg)
+![Set writes selected replicas. Get reads the first healthy owner in ring order.](diagrams/replication-and-health.svg)
 
-`NewCluster(names, capacity, replicas, replicationFactor)` creates named nodes and a sorted FNV-1a hash ring. Here `replicas` means virtual ring points per node, while `replicationFactor` means the number of physical nodes selected to hold a value. Both counts and capacity must be positive.
+`NewCluster(names, capacity, replicas, replicationFactor)` creates named nodes and a sorted FNV-1a hash ring. The `replicas` parameter specifies virtual points per node. The `replicationFactor` parameter specifies physical copies per value. Both counts and capacity must be positive.
 
-Routing hashes the key, binary-searches the first ring point at or after its hash, then walks clockwise and wraps as needed. It collects distinct healthy owners up to the requested replication factor. Repeated virtual points for one physical owner do not create extra copies. If too few nodes are healthy, routing returns the available subset; if none are healthy, it returns `ErrNoNodes`.
+Routing hashes the key and finds the first ring point at or after that hash. It then moves clockwise through the ring. It collects distinct healthy owners up to the requested replication factor. It returns to the first point when necessary. Multiple points for one node do not create additional copies.
 
-`Set` writes sequentially to every selected owner and returns the first owner's name. `Get` reads only the first selected healthy owner. It does not try remaining replicas after a cache miss, even if one of them still has the value.
+If too few nodes are healthy, routing returns the available subset. If none are healthy, it returns `ErrNoNodes`. `Set` writes to selected owners one at a time and returns the first owner's name. `Get` reads only the first selected healthy owner. It does not try other replicas after a miss.
 
-`SetNodeHealth` changes a manual flag. It is not an active health probe. When the primary is marked unhealthy, routing skips it; a previously written replica may now serve the read. New writes use the current healthy set. A recovered node can contain stale values because there is no version reconciliation or read repair.
+`SetNodeHealth` changes a manual flag. It does not run a health probe. If the primary is unhealthy, routing selects another healthy owner. A previous replica can then serve the read. New writes use the current healthy set.
+
+A recovered node can contain an old value. The system does not compare versions or repair copies during reads. Thus, health recovery does not establish that a replica has the newest value.
 
 ### Membership changes and rebalancing
 
-![Rebalance gathers live values, copies them to current healthy owners, and removes values from undesired nodes](diagrams/cache-rebalancing.svg)
+![Rebalance copies values to current owners and removes copies from other nodes.](diagrams/cache-rebalancing.svg)
 
-`AddNode` adds an empty node and rebuilds the ring; it does not automatically migrate existing values. Routes can change immediately, so callers can see misses before rebalancing.
+`AddNode` creates an empty node and rebuilds the ring. It does not move existing values automatically. A changed route can cause a miss before rebalancing.
 
-`Rebalance` scans nodes in name order, gathers live values, computes their current healthy owners, writes the primary and replicas, then deletes copies on undesired nodes. If replicas disagree, the first scanned value wins; there are no versions to decide which copy is newer. Its moved count compares the first scanned source name with the new primary, rather than counting every replica copy.
+`Rebalance` scans nodes in name order and collects live values. It calculates current healthy owners and writes the selected copies. It then removes copies from other nodes. If copies disagree, the first scanned value wins. The code has no versions to select the newest copy.
 
-`RemoveNode` snapshots that node's live entries, removes membership and rebuilds the ring, then writes those entries to the remaining selected owners while holding the membership write lock. It rejects removing the last node. This is a local migration operation and does not simulate recovering data from an unreachable remote server.
+The moved count compares the first scanned source with the new primary. It does not count every replica write. `RemoveNode` first copies that node's live entries. It then removes membership and rebuilds the ring. It writes those entries to remaining selected owners under the membership write lock.
 
-Migration calls `Set` with TTL zero. Original expiration times are not preserved, so moved values become non-expiring. Capacity eviction can also remove values while migration copies entries. These are simplifications of the current implementation.
+The cluster rejects removal of its last node. Removal operates on local objects. It does not model data recovery from an unavailable network server.
+
+Migration writes use TTL zero. They do not preserve the original expiration time. Moved values therefore have no expiration. Capacity limits can also cause eviction during migration.
 
 ## Concurrency, cost, and limits
 
-The cluster's `sync.RWMutex` protects membership, health flags, and ring metadata. Each node has its own mutex for the map and recency list. `Set` and `Get` release the membership read lock after choosing node pointers and before accessing values; they do not provide an atomic operation across membership changes.
+The cluster's `sync.RWMutex` protects membership, health flags, and ring metadata. Each node has a mutex for values and recency order. `Set` and `Get` release the membership read lock after node selection. They access values afterward. Their membership selection and value access do not form one atomic operation.
 
-Rebalance holds a membership read lock, but cache writes can still run concurrently. Its scans and copies are not a transactional snapshot, so migration should be coordinated with writes when preserving the latest value matters.
+Rebalance holds a membership read lock. Cache writes can still run concurrently. Its scans and copies do not form a transactional snapshot. Coordinate migration with writes when the newest value must survive.
 
-Local lookup and eviction are O(1) on average. Routing starts with O(log p) binary search for p ring points, then may walk the ring to find healthy distinct owners. Rebalancing scans entries and writes selected copies, so cost grows with stored data and replication factor.
+Local lookup and eviction take O(1) time on average. Routing starts with O(log p) binary search for p ring points. It can then check the whole ring for distinct healthy owners. Rebalance cost increases with entry count and replication factor.
 
-All values disappear on process restart. There is no network transport, durable storage, consensus, quorum protocol, automatic health detection, or conflict resolution in this component.
+A restart loses all values. The component has no network transport, durable storage, consensus, quorum protocol, automatic health checks, or conflict resolution.
 
 ## Project structure
 
@@ -60,10 +66,11 @@ go.mod
 
 ## Run it
 
-Run from the `15-distributed-cache` directory:
+Open a terminal in the `15-distributed-cache` directory.
+Run this command:
 
 ```powershell
 go run ./cmd/demo
 ```
 
-The demo shows local eviction and TTL, creates three nodes with 20 virtual points each and replication factor two, writes and reads user-1, marks its primary unhealthy, then adds cache-d and rebalances. It finally removes cache-d and reads the key again. Output reports selected owners, changed routes, and migrated records.
+The demonstration shows local eviction and TTL expiration. It creates three nodes with 20 virtual points per node and replication factor two. It writes user-1 and marks its primary unhealthy. It then adds cache-d and rebalances values. Finally, it removes cache-d and reads user-1 again. Output shows selected owners, changed routes, and moved records.

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="465" viewBox="0 0 1000 465" role="img" aria-labelledby="title desc"><title id="title">asynchronous replication</title><desc id="desc">The leader accepts record three while a follower at two is stale. The follower requests records after two and applies record three.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="465" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Leader / follower: writes return before replicas catch up</text>
-<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The leader stores ordered changes; followers pull them on their own polling loops.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="465" viewBox="0 0 1000 465" role="img" aria-labelledby="title desc"><title id="title">asynchronous replication</title><desc id="desc">The leader responds before the follower requests and applies the next record.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8" fill="none" stroke="#53647a"/></marker></defs><rect width="1000" height="465" fill="#fff"/><text x="36" y="49" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#243247">Leader / follower: writes return before replicas catch up</text>
+<text x="36" y="84" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53647a">The leader stores ordered changes. Followers pull them on their own polling loops.</text>
 <rect x="50" y="125" width="240" height="85" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
 <text x="66" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Client writes k = v</text>
 <rect x="390" y="125" width="240" height="85" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
@@ -7,7 +7,7 @@
 <rect x="730" y="125" width="220" height="85" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
 <text x="746" y="158" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563eb">Follower: seq 2</text>
 <path d="M 300 167 L 380 167" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="50" y="241" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">Leader applies record 3 and responds; follower may still serve its old value.</text>
+<text x="50" y="241" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#243247">The leader applies record 3 and responds. The follower can still return its old value.</text>
 <path d="M 720 292 L 640 292" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="650" y="284" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#243247">from=2</text>
 <path d="M 640 345 L 720 345" fill="none" stroke="#53647a" stroke-width="2" marker-end="url(#arrow)"/>

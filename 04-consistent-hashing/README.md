@@ -2,47 +2,49 @@
 
 ## What it is
 
-Let's say you have several cache or storage servers and need to decide where each key should go. Consistent hashing maps a key to a node while reducing movement when nodes are added or removed.
+Consistent hashing assigns keys to nodes. It reduces the number of keys that change node when a node enters or leaves the group.
 
 ## How it works
 
-The component includes two placement algorithms: a modulo baseline and a consistent-hash ring. Both map a key to a physical node; neither stores the key's value. Diagram positions and hash outputs below are illustrative.
+This component provides a modulo router and a hash ring. Both select a physical node for a key. Neither stores values. The diagrams use example positions and hash results.
 
 ### Modulo baseline
 
-`NewModulo(nodes)` copies the ordered node list. `Lookup(key)` hashes the key with FNV-1a and chooses `nodes[hash(key) % len(nodes)]`. An empty list returns an empty string.
+`NewModulo(nodes)` copies an ordered list of nodes. `Lookup(key)` calculates an FNV-1a hash. It selects `nodes[hash(key) % len(nodes)]`. If the list is empty, it returns an empty string.
 
-![Changing the modulo divisor from three nodes to four remaps three example keys](diagrams/modulo-routing.svg)
+![A change from three nodes to four changes the modulo results.](diagrams/modulo-routing.svg)
 
-For a hash output of 7, three nodes select index `7 % 3 = 1`, or B. Adding D changes the divisor to four, selecting index `7 % 4 = 3`, or D. Many keys can change owner even though only one node was added.
+For hash result seven, three nodes select index `7 % 3 = 1`, or B. With four nodes, the same hash selects index `7 % 4 = 3`, or D. One additional node can change the assignment of many keys.
 
-Lookup is O(1), and the metadata is small. The trade-off is disruptive remapping when the node list changes. This baseline has a fixed list; comparing membership configurations requires constructing separate routers.
+Selection takes O(1) time after the hash calculation. The router stores a fixed list. To compare two node groups, create a router for each group.
 
 ### Ring lookup
 
-The ring keeps a sorted slice of hash points, a map from each point to its physical owner, and the points belonging to each node. Keys and virtual-node names are hashed using the first 32 bits of SHA-1. The modulo baseline uses a different hash function, so its numeric outputs should not be compared directly with ring hashes.
+The ring stores sorted hash points and their physical owners. It also records the points for each node. The ring uses the first 32 bits of SHA-1 to hash keys and virtual-node names.
 
-![A key at position 30 routes clockwise to B at 45; a key beyond the final point wraps to A](diagrams/ring-lookup.svg)
+![Hash 30 selects B at 45. Hash 95 returns to A at 10.](diagrams/ring-lookup.svg)
 
-`Lookup(key)` binary-searches for the first point greater than or equal to the key's hash. If the search passes the final point, it wraps to the first. With points `A:10`, `B:45`, and `C:80`, hash 30 selects B; hash 95 wraps to A. An empty ring returns an empty string.
+`Lookup(key)` finds the first ring point greater than or equal to the key hash. It uses binary search. If the key hash exceeds the final point, the search selects the first point. An empty ring returns an empty string.
 
-Lookup is deterministic for a fixed ring and takes O(log p), where p is the total number of ring points.
+For points `A:10`, `B:45`, and `C:80`, hash 30 selects B. Hash 95 selects A. For a fixed ring, the same key always selects the same node. Lookup takes O(log p) time for p ring points.
+
+The modulo router uses a different hash function. Its numeric hash results do not directly correspond to the ring's hash results.
 
 ### Adding and removing nodes
 
-![Adding D transfers only its preceding interval; virtual points distribute each physical owner around the ring](diagrams/membership-and-virtual-nodes.svg)
+![Node D takes only the interval before its point. Virtual points divide each node's assigned intervals.](diagrams/membership-and-virtual-nodes.svg)
 
-Adding D at position 30 changes ownership only for hashes in `(10, 30]`: those keys previously went to B at 45 and now go to D. Removing D returns that interval to B. With several points per physical node, the same rule applies to each point's preceding interval.
+If D enters at position 30, hashes in `(10, 30]` change from B to D. If D leaves, those hashes return to B. The same rule applies to the interval before each virtual point.
 
-`AddNode` ignores a node already present, creates its points, and sorts the ring. If a point collides with an existing point, it advances until it finds an unused position. `RemoveNode` removes all points owned by that node; an unknown node is ignored.
+`AddNode` ignores an existing node. For a new node, it creates points and sorts the ring. If a point already exists, the function increases that point until it finds an unused position. `RemoveNode` removes all points for the specified node. It ignores an unknown node.
 
-These operations update placement metadata. Applications must move stored values separately when ownership changes.
+These functions change assignments only. An application must move stored values separately when their assigned nodes change.
 
 ### Virtual nodes
 
-`New(100)` creates 100 virtual points per physical node. Names such as `node-a#0` and `node-a#1` hash to different positions, but both resolve to `node-a`. Calling `New()` uses one point per node.
+`New(100)` creates 100 virtual points for each physical node. Names such as `node-a#0` and `node-a#1` select different points for the same physical owner. `New()` uses one point per physical node.
 
-Multiple points divide a physical node's ownership into smaller ranges, usually improving distribution and spreading the effect of membership changes. They also increase metadata and sorting work. Virtual nodes do not replicate values or guarantee perfectly equal load; popular keys can still create hot spots.
+More points usually give a more equal distribution of intervals. They also increase metadata and sort costs. Virtual nodes do not copy values to other physical nodes. A frequently used key can still give one node much more work.
 
 ```go
 placement := ring.New(100)
@@ -53,9 +55,9 @@ owner := placement.Lookup("user:42")
 
 ## State, concurrency, and limits
 
-Ring metadata uses O(p) space. The demos build rings before looking up keys. The ring has no mutex: adding or removing nodes concurrently with lookups requires external synchronization or immutable snapshots.
+Ring metadata uses O(p) space. The demonstration programs prepare rings before they read keys. The ring has no mutex. Concurrent membership changes and lookups require external synchronization or immutable snapshots.
 
-Replication, data migration, health checking, and consistency are separate mechanisms. A placement decision alone does not prove that its owner is reachable or has the requested value.
+The ring does not provide replication, data migration, or health checks. A node assignment does not show that the node is available or contains the value.
 
 ## Project structure
 
@@ -68,10 +70,11 @@ go.mod
 
 ## Run it
 
-Run from the `04-consistent-hashing` directory:
+Open a terminal in the `04-consistent-hashing` directory.
+Run this command:
 
 ```powershell
 go run ./cmd/demo
 ```
 
-The demo uses 100 virtual points per node. It compares routes for 100 keys before and after adding node-d, then before and after removing node-b, printing sample routes and counts of keys that changed owner. It compares routing metadata; it does not migrate stored values.
+The demonstration uses 100 virtual points per node. It compares routes for 100 keys before and after node addition or removal. It prints example routes and counts changed assignments. It does not move stored values.

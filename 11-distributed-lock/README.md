@@ -2,31 +2,31 @@
 
 ## What it is
 
-A lock service lets clients coordinate access to one shared operation. This component models one in-memory lock with a lease: ownership expires if the holder stops renewing it.
+A lock service coordinates client access to a shared operation. This component provides one lock with a lease. The lease expires if its owner stops renewal.
 
 ## How it works
 
 ### Acquire, renew, and release
 
-![One client acquires and renews a lease; a competing client is rejected until expiration permits a new owner](diagrams/lease-lifecycle.svg)
+![One owner renews its lease. A different owner can acquire the lock after expiration.](diagrams/lease-lifecycle.svg)
 
-The lock stores whether it is held, the current owner, current token, next token counter, and expiration time. `Acquire(owner, TTL)` clears an expired lease, rejects acquisition if the lock is still held, or increments the token counter and grants a new lease.
+The lock stores the current owner, token, expiration time, and held state. It also stores the next token counter. `Acquire(owner, TTL)` removes expired ownership first. TTL means time to live. If the lock is free, the function increases the token counter and grants a lease.
 
-`Renew(owner, token, TTL)` extends a valid current lease to `now + TTL` without changing its token. `Release(owner, token)` clears current ownership. Both reject a stale owner/token pair or an expired lease. Even the current owner cannot call acquire again while its lease is held; renewal is a separate operation.
+If the lock is held, acquire rejects the request. The current owner must use renewal instead of a second acquisition. `Renew(owner, token, TTL)` sets expiration to `now + TTL` without a token change. `Release(owner, token)` removes current ownership.
 
-All three operations check expiration while holding one mutex. Expiration is lazy: a background reaper is unnecessary because the next operation detects an expired holder. The mutex ensures concurrent acquisitions cannot both win within this lock instance.
+Renew and release require the current owner and token. They reject an expired lease or an incorrect owner/token pair. All operations check expiration under one mutex. No background expiration goroutine is necessary. Two concurrent acquisitions cannot both succeed in the same lock instance.
 
 ### Fencing tokens
 
-![A newer owner receives a larger token; old-token renewals and releases fail, while downstream writes need separate fencing enforcement](diagrams/fencing-tokens.svg)
+![A new owner gets a larger token. The lock rejects an earlier owner's token.](diagrams/fencing-tokens.svg)
 
-A can pause while holding token 41, lose its lease, and later resume after B has acquired token 42. A's old owner/token pair cannot release or renew B's lock.
+Client A can pause with token 41 until its lease expires. Client B can then acquire token 42. If A resumes, its owner/token pair cannot renew or release B's lock.
 
-Preventing A from modifying the shared resource requires an additional check at that resource. It must remember the latest accepted fencing token and reject older ones. The repository issues tokens and validates them at the lock boundary; it does not implement a downstream resource that enforces fencing on its own writes.
+The shared resource needs its own fencing check. It must keep the newest accepted token and reject older tokens. This prevents an earlier owner from changing the resource after a new owner takes control. This repository checks tokens at the lock service only. It does not implement that separate resource check.
 
 ### HTTP service
 
-The server holds one `Lock` instance, so concurrent HTTP handlers share the same ownership state. The examples use these requests:
+One server process holds one `Lock` instance. Concurrent HTTP handlers use the same ownership state. The examples use these requests:
 
 | Endpoint | Parameters | Response fields |
 | --- | --- | --- |
@@ -36,9 +36,9 @@ The server holds one `Lock` instance, so concurrent HTTP handlers share the same
 
 ## Concurrency and limits
 
-Each ownership operation is O(1) and serialized by a `sync.Mutex`. An expired lease frees the lock for a new caller but does not stop the old process from running.
+Each ownership operation takes O(1) time under a `sync.Mutex`. Expiration permits a new owner. It does not stop the previous owner's process.
 
-The counter increases only within a server lifetime. Restart loses both ownership and token history, and independent server processes do not coordinate. This is a model of leases and fencing, without replicated state or consensus-backed lock ownership.
+The token counter increases within one server lifetime. A restart loses ownership and token history. Separate server processes do not coordinate their locks. The service does not replicate state or use consensus to establish ownership.
 
 ## Project structure
 
@@ -52,7 +52,8 @@ go.mod
 
 ## Run it
 
-Run from the `11-distributed-lock` directory. Start the in-process demo:
+Open a terminal in the `11-distributed-lock` directory.
+Start the in-process demonstration:
 
 ```bash
 go run ./cmd/demo
@@ -70,7 +71,7 @@ Use another port if `8080` is already in use:
 go run ./cmd/server -addr :8090
 ```
 
-Acquire, renew, and release with PowerShell:
+Run the following acquisition, renewal, and release commands in order:
 
 ```powershell
 $lock = Invoke-RestMethod -Method Post `
@@ -83,4 +84,4 @@ Invoke-RestMethod -Method Post `
   -Uri "http://localhost:8090/release?owner=client-a&token=$($lock.token)"
 ```
 
-The service is an educational single-process lock server. It demonstrates leases and fencing tokens, but it does not replicate its state or provide consensus between multiple lock servers.
+The commands use one server instance. The server does not replicate ownership state or coordinate with other lock servers.
